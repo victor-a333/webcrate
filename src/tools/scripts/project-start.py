@@ -33,7 +33,9 @@ for projectname,project in projects.items():
       log.write(f'Network webcrate_network_{projectname} exists')
     else:
       log.write(f'Create docker network for {projectname}')
-      os.system(f'docker network create --driver=bridge --subnet=10.{net_num}.0/24 webcrate_network_{projectname} > /dev/null')
+      os.system(f'docker network create --driver=bridge --subnet=10.{net_num}.0/24 '
+                f'-o "com.docker.network.bridge.name"="br-{projectname}" '
+                f'webcrate_network_{projectname} > /dev/null')
     project_name = projectname
     backend = f'{project.backend}{"" if project.backend_version == "latest" else project.backend_version }'
     container_name = f'webcrate-core-{projectname}'
