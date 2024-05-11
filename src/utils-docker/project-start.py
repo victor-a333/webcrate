@@ -293,7 +293,9 @@ for projectname,project in projects.items():
     if helpers.is_network_exists(f'webcrate_network_{project.name}'):
       log.write(f'{project.name} - network exists')
     else:
-      os.system(f'docker network create --driver=bridge --subnet=10.{net_num}.0/24 webcrate_network_{project.name} >/dev/null')
+      os.system(f'docker network create --driver=bridge --subnet=10.{net_num}.0/24 '
+                f'-o "com.docker.network.bridge.name"="br-{project.name}" '
+                f'webcrate_network_{project.name} >/dev/null')
       log.write(f'{project.name} - network created')
 
     # INIT PROJECT FOLDER
