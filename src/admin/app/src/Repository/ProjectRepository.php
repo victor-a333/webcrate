@@ -49,6 +49,7 @@ class ProjectRepository extends ServiceEntityRepository
             $item->name = $project->getName();
             $item->applying = false;
             $item->uid = $project->getUid();
+            $item->ip_address = $project->getIpAddress();
             $item->backend = $project->getBackend()->getName() . ' ' . $project->getBackend()->getVersion();
             $item->backup = $project->getBackup() ? 'yes' : 'no';
             $item->https = $project->getHttps()->getName();
