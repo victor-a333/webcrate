@@ -65,6 +65,9 @@ class ProjectType extends AbstractType
             'constraints' => new NotBlank(),
             'prototype' => true,
         ])
+        ->add('ip_address', TextType::class, [
+            'required' => false,
+        ])
         ->add('ftps', FtpsType::class, [
             'entry_type' => FtpType::class,
             'allow_add' => true,

@@ -308,6 +308,8 @@ class AdminController extends AbstractController
                 $project_obj->auth_locations = !empty($project_obj->auth_locations) ? $project_obj->auth_locations : [];
                 $project_obj->duplicity_filters = !empty($project_obj->duplicity_filters) ? $project_obj->duplicity_filters : [];
                 $project_obj->ftps = !empty($project_obj->ftps) ? $project_obj->ftps : [];
+                $project_obj->ip_address = !empty($project_obj->ip_address) ? $project_obj->ip_address : '';
+
                 $project->setUid($project_obj->uid);
                 $project->setName($projectname);
                 $project->setVolume($project_obj->volume);
@@ -323,6 +325,7 @@ class AdminController extends AbstractController
                 $project->setPostgre($project_obj->postgresql_db == 'yes' || $project_obj->postgresql_db === true);
                 $project->setRootFolder($project_obj->root_folder);
                 $project->setPasswordHash($project_obj->password);
+                $project->setIpAddress($project_obj->ip_address);
                 $https = $this->https_repository->findByName($project_obj->https);
                 $project->setHttps($https);
                 $backend_version = empty($project_obj->backend_version) ? ( $project_obj->backend == 'php' ? '81' : 'latest' ) : $project_obj->backend_version;
