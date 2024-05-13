@@ -3,7 +3,7 @@ FROM archlinux:latest
 #update pacman db
 RUN pacman --needed --noconfirm -Syu && \
     pacman --needed --noconfirm -S fakeroot binutils git nano openssh unzip composer npm mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx docker \
-    php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached
+    php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached debugedit
 
 #make automake bison binutils autoconf gcc patch
 RUN pacman --needed --noconfirm -S sudo;
