@@ -77,7 +77,6 @@ class ProjectRepository extends ServiceEntityRepository
     public function getFirstAvailableUid(): ?int
     {
 
-
         $conn = $this->getEntityManager()->getConnection();
 
         $sql = '
@@ -88,7 +87,7 @@ class ProjectRepository extends ServiceEntityRepository
         if ( !empty($results) ) {
             $freeUid = intval(end($results)['uid']) + 1;
         } else {
-            $freeUid = 100000;
+            return 100000;
         }
         foreach ( $results as $index => $row ) {
             $uid = intval($row['uid']);
