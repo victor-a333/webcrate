@@ -282,7 +282,7 @@ async def startRedis (project):
     os.system(f"""
       docker run -d \
         --name webcrate-{project.name}-redis \
-        --log-driver=none
+        --log-driver=none \
         -e REDIS_PASSWORD={REDIS_PASSWORD} \
         redis:7.4.3-alpine \
         bash -c "mkdir -p /usr/local/etc/redis && \
