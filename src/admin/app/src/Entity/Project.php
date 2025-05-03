@@ -144,6 +144,11 @@ class Project
     private $Memcached;
 
     /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $Redis;
+
+    /**
      * @ORM\Column(type="boolean")
      */
     private $Solr;
@@ -402,6 +407,7 @@ class Project
             'ftps' => !empty($ftps) ? $ftps : (object)[],
             'duplicity_filters' => !empty($duplicityFilters) ? $duplicityFilters : (object)[],
             'memcached' => (bool)$this->Memcached,
+            'redis' => (bool)$this->Redis,
             'solr' => (bool)$this->Solr,
             'elastic' => (bool)$this->Elastic,
             'mysql_db' => (bool)$this->mysql,
@@ -641,6 +647,18 @@ class Project
     public function setMemcached(?bool $Memcached): self
     {
         $this->Memcached = $Memcached;
+
+        return $this;
+    }
+
+    public function getRedis(): ?bool
+    {
+        return $this->Redis;
+    }
+
+    public function setRedis(?bool $Redis): self
+    {
+        $this->Redis = $Redis;
 
         return $this;
     }

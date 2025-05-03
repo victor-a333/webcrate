@@ -146,6 +146,9 @@ class ProjectType extends AbstractType
         ->add('Memcached', CheckboxType::class, [
             'required' => false,
         ])
+        ->add('Redis', CheckboxType::class, [
+            'required' => false,
+        ])
         ->add('Solr', CheckboxType::class, [
             'required' => false,
         ])
