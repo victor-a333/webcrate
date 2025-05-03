@@ -1,15 +1,8 @@
 FROM archlinux:latest
 
-RUN sed -Ei "s/default mirrors./default mirrors.\n\n[home_el_archphp_Arch]\nServer = https:\/\/download.opensuse.org\/repositories\/home:\/el:\/archphp\/Arch\/\$arch/g" /etc/pacman.conf && \
-    key=$(curl -fsSL https://download.opensuse.org/repositories/home:el:archphp/Arch/$(uname -m)/home_el_archphp_Arch.key) && \
-    fingerprint=$(gpg --quiet --with-colons --import-options show-only --import --fingerprint <<< "${key}" | awk -F: '$1 == "fpr" { print $10 }') && \
-    pacman-key --init && \
-    pacman-key --add - <<< "${key}" && \
-    pacman-key --lsign-key "${fingerprint}"
-
 #update pacman db
 RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S fakeroot binutils git nano openssh unzip npm mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx docker \
+    pacman --needed --noconfirm -S fakeroot binutils git composer nano openssh unzip npm mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx docker \
     php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached php-igbinary debugedit
 
 #make automake bison binutils autoconf gcc patch
@@ -41,9 +34,6 @@ USER root
 
 RUN chown root:root /bin/systemctl.py && \
     chmod a+x /bin/systemctl.py && \
-    wget -O composer.phar https://getcomposer.org/download/latest-stable/composer.phar && \
-    chmod +x composer.phar && \
-    mv composer.phar /usr/bin/composer && \
     mv /bin/systemctl /bin/systemctl_original && \
     cp /bin/systemctl.py /bin/systemctl && \
     systemctl enable php-fpm && \
