@@ -273,12 +273,6 @@ async def startRedis (project):
     log.write(f'{project.name} - redis exists')
   else:
     log.write(f'{project.name} - starting redis container')
-    os.system(f'docker run -d --name webcrate-{project.name}-redis '
-      f'--network="webcrate_network_{project.name}" '
-      f'--restart="unless-stopped" '
-      f'--user "{WEBCRATE_UID}:{WEBCRATE_GID}" '
-      f'-v {WEBCRATE_PWD}/var/redis-projects/{project.name}:/data '
-      f'redis:7.4.3-alpine >/dev/null')
     os.system(f"""
       docker run -d \
         --name webcrate-{project.name}-redis \
