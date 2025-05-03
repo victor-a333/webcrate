@@ -246,6 +246,53 @@ async def startPostgresql (project):
     else:
       log.write(f'postgresql user {project.name} and db already exists')
 
+async def startRedis (project):
+  secret_filename=f'/webcrate/secrets/{project.name}-project-redis.txt'
+  if os.path.isfile(secret_filename):
+    with open(secret_filename, 'r') as f:
+      for line in f:
+        pair = line.strip().split('=', 1)
+        if pair[0] == 'password':
+          REDIS_PASSWORD = pair[1]
+      f.close()
+  else:
+    REDIS_PASSWORD=os.popen(f"/pwgen.sh").read().strip()
+    with open(secret_filename, 'w') as f:
+      f.write(f'host=webcrate-{project.name}-redis\n')
+      f.write(f'password={REDIS_PASSWORD}\n')
+      f.close()
+    os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {secret_filename}')
+    os.system(f'cp {secret_filename} {project.folder}/redis.txt')
+    os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/redis.txt')
+    os.system(f'chmod a-rwx,u+rw {project.folder}/redis.txt')
+        
+  if not os.path.isdir(f'/webcrate/redis-projects/{project.name}') or not os.listdir(f'/webcrate/redis-projects/{project.name}'):
+    os.system(f'mkdir -p /webcrate/redis-projects/{project.name}')
+    os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/redis-projects/{project.name}')
+  if helpers.is_container_exists(f'webcrate-{project.name}-redis'):
+    log.write(f'{project.name} - redis exists')
+  else:
+    log.write(f'{project.name} - starting redis container')
+    os.system(f'docker run -d --name webcrate-{project.name}-redis '
+      f'--network="webcrate_network_{project.name}" '
+      f'--restart="unless-stopped" '
+      f'--user "{WEBCRATE_UID}:{WEBCRATE_GID}" '
+      f'-v {WEBCRATE_PWD}/var/redis-projects/{project.name}:/data '
+      f'redis:7.4.3-alpine >/dev/null')
+    os.system(f"""
+      docker run -d \
+        --name webcrate-{project.name}-redis \
+        --log-driver=none
+        -e REDIS_PASSWORD={REDIS_PASSWORD} \
+        redis:7.4.3-alpine \
+        bash -c "mkdir -p /usr/local/etc/redis && \
+                echo 'bind 0.0.0.0' > /usr/local/etc/redis/redis.conf && \
+                echo 'requirepass $REDIS_PASSWORD' >> /usr/local/etc/redis/redis.conf && \
+                redis-server /usr/local/etc/redis/redis.conf" \
+        >/dev/null        
+      """)
+  #TODO check when container start
+
 async def asyncOps (project):
   initCertificatesTask = asyncio.create_task(initCertificates(project))
   await initCertificatesTask
@@ -261,6 +308,10 @@ async def asyncOps (project):
   # START POSTGRESQL
   if project.postgresql_db:
     startPostgresql5Task = asyncio.create_task(startPostgresql(project))
+  
+  #START REDIS
+  if project.redis:
+    startRedisTask = asyncio.create_task(startRedis(project))
 
   if project.mysql_db:
     await startMysqlTask
@@ -268,6 +319,9 @@ async def asyncOps (project):
     await startMysql5Task
   if project.postgresql_db:
     await startPostgresql5Task
+  if project.redis:
+    await startRedisTask
+    
   return initCertificatesTask.result()
 
 for projectname,project in projects.items():
