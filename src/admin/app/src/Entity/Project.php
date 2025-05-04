@@ -390,7 +390,7 @@ class Project
             'nginx_template' => !empty($this->nginx_template) ? $this->nginx_template->getName() : 'default',
             'nginx_block' => !empty($this->nginx_block) ? $this->nginx_block : '',
             'root_folder' => $this->rootFolder,
-            'ip_address' => $this->ipAddress,
+            'ip_address' => !empty($this->ipAddress) ? $this->ipAddress : '',
             'https' => !empty($this->https) ? $this->https->getName() : 'disabled',
             'backend' => !empty($this->backend) ? $this->backend->getName() : 'php',
             'backend_version' => !empty($this->backend) ? $this->backend->getVersion() : '81',
