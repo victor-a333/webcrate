@@ -276,12 +276,11 @@ async def startRedis (project):
     os.system(f"""
       docker run -d \
         --name webcrate-{project.name}-redis \
-        --log-driver=none \
         -e REDIS_PASSWORD={REDIS_PASSWORD} \
-        redis:7.4.3-alpine \
+        redis:7 \
         bash -c "mkdir -p /usr/local/etc/redis && \
                 echo 'bind 0.0.0.0' > /usr/local/etc/redis/redis.conf && \
-                echo 'requirepass $REDIS_PASSWORD' >> /usr/local/etc/redis/redis.conf && \
+                echo 'requirepass \$REDIS_PASSWORD' >> /usr/local/etc/redis/redis.conf && \
                 redis-server /usr/local/etc/redis/redis.conf" \
         >/dev/null        
       """)
