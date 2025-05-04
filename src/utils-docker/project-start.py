@@ -303,7 +303,7 @@ async def asyncOps (project):
     startPostgresql5Task = asyncio.create_task(startPostgresql(project))
   
   #START REDIS
-  if project.redis:
+  if hasattr(project, "redis") and project.redis:
     startRedisTask = asyncio.create_task(startRedis(project))
 
   if project.mysql_db:
@@ -312,7 +312,7 @@ async def asyncOps (project):
     await startMysql5Task
   if project.postgresql_db:
     await startPostgresql5Task
-  if project.redis:
+  if hasattr(project, "redis") and project.redis:
     await startRedisTask
     
   return initCertificatesTask.result()
