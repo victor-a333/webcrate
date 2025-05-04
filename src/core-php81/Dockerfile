@@ -91,6 +91,7 @@ RUN git clone https://github.com/oh-my-fish/oh-my-fish . && \
     rm -rf ./* && \
     cp /root/.config/fish/conf.d/omf.fish /etc/fish/conf.d/omf.fish && \
     fish -C "omf install cbjohnson" && \
+    fish -C "omf install default" && \
     cp /webcrate-fish/omf/themes/default/functions/fish_right_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_right_prompt.fish;
 COPY fish_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_prompt.fish
 
