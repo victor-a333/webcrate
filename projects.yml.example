@@ -19,6 +19,7 @@ test:
   ftps: {  }
   duplicity_filters:
   memcached: false
+  redis: false
   solr: false
   elastic: false
   mysql_db: true

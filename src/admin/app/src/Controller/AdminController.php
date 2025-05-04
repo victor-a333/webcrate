@@ -286,6 +286,7 @@ class AdminController extends AbstractController
                 $project = new Project();
                 $project_obj->active = !empty($project_obj->active) ? $project_obj->active : false;
                 $project_obj->memcached = !empty($project_obj->memcached) ? $project_obj->memcached : false;
+                $project_obj->redis = !empty($project_obj->redis) ? $project_obj->redis : false;
                 $project_obj->solr = !empty($project_obj->solr) ? $project_obj->solr : false;
                 $project_obj->elastic = !empty($project_obj->elastic) ? $project_obj->elastic : false;
                 $project_obj->redirect = !empty($project_obj->redirect) ? $project_obj->redirect : false;
@@ -315,6 +316,7 @@ class AdminController extends AbstractController
                 $project->setVolume($project_obj->volume);
                 $project->setActive($project_obj->active == 'yes' || $project_obj->active === true);
                 $project->setMemcached($project_obj->memcached == 'yes' || $project_obj->memcached === true);
+                $project->setRedis($project_obj->redis == 'yes' || $project_obj->redis === true);
                 $project->setSolr($project_obj->solr == 'yes' || $project_obj->solr === true);
                 $project->setElastic($project_obj->elastic == 'yes' || $project_obj->elastic === true);
                 $project->setBackup($project_obj->backup == 'yes' || $project_obj->backup === true);

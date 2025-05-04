@@ -174,6 +174,7 @@ for projectname,project in projects.items():
           f'{domain} '
           f'{project.password} '
           f'{project.memcached} '
+          f'{project.redis} '
           f'{project.solr}'
           f'" >> /webcrate/meta/projects/{project.name}.config')
 

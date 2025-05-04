@@ -156,6 +156,7 @@ function Pull() {
   docker pull ace5040/doctohtml:legacy
   docker pull ace5040/htmltopdf:latest
   docker pull memcached:1
+  docker pull redis:7
   docker pull mariadb:5
   docker pull mariadb:10
   docker pull phpmyadmin/phpmyadmin:5

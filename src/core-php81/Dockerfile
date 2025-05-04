@@ -27,9 +27,10 @@ RUN yay --gpgflags "--keyserver hkp://keyserver.ubuntu.com" --answeredit n --ans
     rm -rf /home/dev/.cache
 
 USER root
-RUN pecl81 install timezonedb-2021.5 memcached && \
+RUN pecl81 install timezonedb-2021.5 memcached redis && \
     echo extension=timezonedb.so > /etc/php81/conf.d/10-timezonedb.ini && \
-    echo extension=memcached.so > /etc/php81/conf.d/10-memcached.ini
+    echo extension=memcached.so > /etc/php81/conf.d/10-memcached.ini && \ 
+    echo extension=redis.so > /etc/php81/conf.d/10-redis.ini
 
 USER dev
 #install symfony-cli-bin
@@ -91,6 +92,7 @@ RUN git clone https://github.com/oh-my-fish/oh-my-fish . && \
     rm -rf ./* && \
     cp /root/.config/fish/conf.d/omf.fish /etc/fish/conf.d/omf.fish && \
     fish -C "omf install cbjohnson" && \
+    fish -C "omf install default" && \
     cp /webcrate-fish/omf/themes/default/functions/fish_right_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_right_prompt.fish;
 COPY fish_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_prompt.fish
 
