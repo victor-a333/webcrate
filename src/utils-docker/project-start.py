@@ -276,7 +276,8 @@ async def startRedis (project):
     os.system(f"""
       docker run -d \
         --name webcrate-{project.name}-redis \
-        -e REDIS_PASSWORD={REDIS_PASSWORD} \
+        --network="webcrate_network_{project.name}"
+        -e REDIS_PASSWORD="{REDIS_PASSWORD}" \
         redis:7 \
         bash -c "mkdir -p /usr/local/etc/redis && \
                 echo 'bind 0.0.0.0' > /usr/local/etc/redis/redis.conf && \
