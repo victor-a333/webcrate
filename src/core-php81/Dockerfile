@@ -2,6 +2,7 @@ FROM archlinux:latest
 
 #install system utils and services
 RUN pacman --needed --noconfirm -Syu && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim openssh base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
         wget tmux ruby python-pip fish libmemcached-awesome libreoffice ttf-liberation fuse2 fuse3 jdk11-openjdk supervisor && \
     yes | pacman -Scc && \

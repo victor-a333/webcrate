@@ -2,8 +2,9 @@ FROM archlinux:latest
 
 #update pacman db
 RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S fakeroot binutils git composer nano openssh unzip npm mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx docker \
-    php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached php-igbinary debugedit
+    pacman --needed --noconfirm -S binutils git composer nano openssh unzip npm mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx docker \
+    php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached php-igbinary debugedit && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst
 
 #make automake bison binutils autoconf gcc patch
 RUN pacman --needed --noconfirm -S sudo;
