@@ -4,7 +4,8 @@ FROM archlinux:latest
 RUN pacman --needed --noconfirm -Syu && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim openssh base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
-        wget tmux ruby python-pip fish libmemcached-awesome libreoffice ttf-liberation fuse2 fuse3 jdk11-openjdk supervisor && \
+        wget tmux ruby python-pip fish libmemcached-awesome ttf-liberation fuse2 fuse3 jdk11-openjdk supervisor openssl-1.1 && \
+        pacman -U --noconfirm https://archive.archlinux.org/packages/l/libreoffice-still/libreoffice-still-7.3.7-2-x86_64.pkg.tar.zst && \
     yes | pacman -Scc && \
     useradd -m -s /bin/bash dev && \
     usermod -p "dev" dev && \
@@ -45,6 +46,11 @@ RUN git clone https://aur.archlinux.org/pdf2htmlex-appimage.git && \
     cd pdf2htmlex-appimage && \
     makepkg -scir --nocheck --noconfirm --skipchecksums && \
     rm -rf /home/dev/pdf2htmlex-appimage
+
+#install wkhtmltox(require openssl-1.1)
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-3/wkhtmltox-0.12.6-3.archlinux-x86_64.pkg.tar.xz && \
+    tar -xf wkhtmltox-*.tar.xz -C / && \
+    rm -rf ./wkhtmltox-*
 
 #install docker-systemctl-replacement-git
 RUN git clone https://aur.archlinux.org/docker-systemctl-replacement-git.git && \
