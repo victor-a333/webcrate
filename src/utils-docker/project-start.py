@@ -281,7 +281,7 @@ async def startRedis (project):
         redis:7 \
         bash -c "mkdir -p /usr/local/etc/redis && \
                 echo 'bind 0.0.0.0' > /usr/local/etc/redis/redis.conf && \
-                echo 'requirepass \$REDIS_PASSWORD' >> /usr/local/etc/redis/redis.conf && \
+                echo 'requirepass {REDIS_PASSWORD}' >> /usr/local/etc/redis/redis.conf && \
                 redis-server /usr/local/etc/redis/redis.conf" \
         >/dev/null        
       """)
