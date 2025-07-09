@@ -2,7 +2,9 @@ FROM archlinux:latest
 
 #install system utils and services
 #use old openssh-9.6 which work with docker-systemctl-replacement
-RUN pacman --needed --noconfirm -Syu && \
+#archlinux-keyring fix installing simdjson
+RUN pacman -Sy archlinux-keyring && \
+    pacman --needed --noconfirm -Syu && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
         wget tmux ruby python-pip fish libmemcached-awesome ttf-liberation fuse2 fuse3 jdk11-openjdk supervisor openssl-1.1 && \
