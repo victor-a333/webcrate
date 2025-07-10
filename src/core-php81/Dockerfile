@@ -1,8 +1,4 @@
-#use old image with libicu 72 (ls -l /usr/lib/libicuuc.so*) which need for libreoffice-still-7.3.7-2
-FROM archlinux:base-20230101.0.115167
-
-# Fix mirror list to match archive snapshot date
-RUN echo "Server=https://archive.archlinux.org/repos/2023/01/01/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+FROM archlinux:latest
 
 #install system utils and services
 #use old openssh-9.6 which work with docker-systemctl-replacement
@@ -10,12 +6,10 @@ RUN echo "Server=https://archive.archlinux.org/repos/2023/01/01/\$repo/os/\$arch
 RUN pacman-key --init && \
     pacman --noconfirm -Sy archlinux-keyring && \
     pacman --needed --noconfirm -Syu && \
-#    pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
-        wget tmux ruby python-pip fish libmemcached-awesome ttf-liberation fuse2 fuse3 jdk11-openjdk supervisor openssl-1.1 && \
-        pacman -U --noconfirm https://archive.archlinux.org/packages/l/libreoffice-still/libreoffice-still-7.3.7-2-x86_64.pkg.tar.zst && \
-#        pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
-    pacman --needed --noconfirm -S fakeroot openssh && \
+        wget tmux ruby python-pip fish libmemcached-awesome supervisor openssl-1.1 && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
     yes | pacman -Scc && \
     useradd -m -s /bin/bash dev && \
     usermod -p "dev" dev && \
