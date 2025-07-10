@@ -198,6 +198,18 @@ if [ "$WEBCRATE_SERVICE_HTMLTOPDF" = true ]; then
       ace5040/htmltopdf:latest > /dev/null
   fi
 fi
+if [ "$WEBCRATE_SERVICE_DOCXTOPDF" = true ]; then
+  if docker container inspect webcrate-htmltopdf >/dev/null 2> /dev/null; then
+    writeLog "Container webcrate-htmltopdf exists"
+  else
+    writeLog "Starting webcrate-htmltopdf container"
+    docker run -d --env-file=$(pwd)/.env --name webcrate-docxtopdf \
+      --network="webcrate_network" --dns=10.255.0.100 \
+      --restart="unless-stopped" \
+      -p "3000:3000" \
+      viktora333/webcrate-utils-libreoffice:stable > /dev/null
+  fi
+fi
 
 if [ "$WEBCRATE_SERVICE_STATS" = true ]; then
   if docker container inspect webcrate-grafana >/dev/null 2>/dev/null; then

@@ -80,8 +80,9 @@ function Build() {
     && [ "$BUILDTARGET" != "dnsmasq" ]\
     && [ "$BUILDTARGET" != "ftp" ]\
     && [ "$BUILDTARGET" != "stats" ]\
+    && [ "$BUILDTARGET" != "utils-libreoffice" ]\
   ;then
-    echo "Unknown target $1. Please use one of: all, nginx, tools, utils-pwgen, utils-docker, core, core-gunicorn, core-php81, core-php74, core-php73, core-php56, admin, stats"
+    echo "Unknown target $1. Please use one of: all, nginx, tools, utils-pwgen, utils-docker, core, core-gunicorn, core-php81, core-php74, core-php73, core-php56, admin, stats, utils-libreoffice"
     exit 1
   fi
   if [ "$2" = "-c" ] || [ "$3" = "-c" ] || [ "$2" = "-cu" ] || [ "$3" = "-cu" ] || [ "$2" = "-uc" ] || [ "$3" = "-uc" ] || [ "$2" = "--no-cache" ] || [ "$3" = "--no-cache" ]; then
@@ -137,6 +138,10 @@ function Build() {
   if [ "$BUILDTARGET" = "all" ] || [ "$BUILDTARGET" = "stats" ]; then
     docker build -t ace5040/webcrate-stats:stable ./src/stats$NOCACHE
   fi
+  if [ "$BUILDTARGET" = "all" ] || [ "$BUILDTARGET" = "utils-libreoffice" ]; then
+    docker build -t viktora333/webcrate-utils-libreoffice:stable ./src/utils-libreoffice$NOCACHE
+  fi
+  
 }
 
 function Pull() {
@@ -166,6 +171,7 @@ function Pull() {
   docker pull elasticsearch:7.17.9
   docker pull grafana/grafana-oss:9.5.15
   docker pull influxdb:2.7.5
+  docker pull viktora333/webcrate-utils-libreoffice:stable
 }
 
 function Push() {
@@ -184,9 +190,10 @@ function Push() {
     && [ "$IMAGE" != "admin" ]\
     && [ "$IMAGE" != "dnsmasq" ]\
     && [ "$IMAGE" != "ftp" ]\
-    && [ "$IMAGE" != "stats" ];\
+    && [ "$IMAGE" != "stats" ]\
+    && [ "$IMAGE" != "utils-libreoffice" ];\
   then
-    echo "Unknown image $1. Please use one of: all, nginx, tools, utils-pwgen, utils-docker, core, core-gunicorn, core-php81, core-php74, core-php73, core-php56, admin, stats"
+    echo "Unknown image $1. Please use one of: all, nginx, tools, utils-pwgen, utils-docker, core, core-gunicorn, core-php81, core-php74, core-php73, core-php56, admin, stats, utils-libreoffice"
     exit 1
   fi
   if [ "$IMAGE" = "all" ] || [ "$IMAGE" = "nginx" ]; then
@@ -235,6 +242,10 @@ function Push() {
   if [ "$IMAGE" = "all" ] || [ "$IMAGE" = "stats" ]; then
     docker push ace5040/webcrate-stats:stable
   fi
+  if [ "$IMAGE" = "all" ] || [ "$IMAGE" = "utils-libreoffice" ]; then
+    docker push viktora333/webcrate-utils-libreoffice:stable
+  fi
+  
 }
 
 function Update() {
