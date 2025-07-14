@@ -199,10 +199,10 @@ if [ "$WEBCRATE_SERVICE_HTMLTOPDF" = true ]; then
   fi
 fi
 if [ "$WEBCRATE_SERVICE_DOCXTOPDF" = true ]; then
-  if docker container inspect webcrate-htmltopdf >/dev/null 2> /dev/null; then
-    writeLog "Container webcrate-htmltopdf exists"
+  if docker container inspect webcrate-docxtopdf >/dev/null 2> /dev/null; then
+    writeLog "Container webcrate-docxtopdf exists"
   else
-    writeLog "Starting webcrate-htmltopdf container"
+    writeLog "Starting webcrate-docxtopdf container"
     docker run -d --env-file=$(pwd)/.env --name webcrate-docxtopdf \
       --network="webcrate_network" --dns=10.255.0.100 \
       --restart="unless-stopped" \
