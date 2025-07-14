@@ -15,10 +15,12 @@ WEBCRATE_GID = os.environ.get('WEBCRATE_GID', '1000')
 WEBCRATE_SERVICE_HTMLTOPDF = os.environ.get('WEBCRATE_SERVICE_HTMLTOPDF', 'false') == 'true'
 WEBCRATE_SERVICE_DOCTOHTML = os.environ.get('WEBCRATE_SERVICE_DOCTOHTML', 'false') == 'true'
 WEBCRATE_SERVICE_STATS = os.environ.get('WEBCRATE_SERVICE_STATS', 'false') == 'true'
+WEBCRATE_SERVICE_DOCXTOPDF = os.environ.get('WEBCRATE_SERVICE_DOCXTOPDF', 'false') == 'true'
 
 for servicename, service in services.items():
   if  ( servicename != 'doctohtml' or WEBCRATE_SERVICE_DOCTOHTML ) and \
       ( servicename != 'htmltopdf' or WEBCRATE_SERVICE_HTMLTOPDF ) and \
+      ( servicename != 'docxtopdf' or WEBCRATE_SERVICE_DOCXTOPDF ) and \
       ( servicename != 'grafana' or WEBCRATE_SERVICE_STATS ):
 
     service.name = servicename
