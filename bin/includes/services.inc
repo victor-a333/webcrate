@@ -206,7 +206,7 @@ if [ "$WEBCRATE_SERVICE_DOCXTOPDF" = true ]; then
     docker run -d --env-file=$(pwd)/.env --name webcrate-docxtopdf \
       --network="webcrate_network" --dns=10.255.0.100 \
       --restart="unless-stopped" \
-      -p "3000:3000" \
+      -p "3002:3000" \
       viktora333/webcrate-utils-libreoffice:stable > /dev/null
   fi
 fi
