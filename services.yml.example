@@ -33,6 +33,13 @@ htmltopdf:
   mysql_db: no
   mysql5_db: no
   postgresql_db: no
+docxtopdf:
+  domain: docxtopdf.test
+  port: 3002
+  https: disabled
+  mysql_db: no
+  mysql5_db: no
+  postgresql_db: no  
 grafana:
   domain: grafana.test
   port: 3000

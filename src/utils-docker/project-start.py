@@ -19,6 +19,7 @@ WEBCRATE_UID = os.environ.get('WEBCRATE_UID', '1000')
 WEBCRATE_GID = os.environ.get('WEBCRATE_GID', '1000')
 WEBCRATE_PROJECTS_FOLDERS = os.environ.get('WEBCRATE_PROJECTS_FOLDERS', '')
 WEBCRATE_SERVICE_HTMLTOPDF = os.environ.get('WEBCRATE_SERVICE_HTMLTOPDF', 'false') == 'true'
+WEBCRATE_SERVICE_DOCXTOPDF = os.environ.get('WEBCRATE_SERVICE_DOCXTOPDF', 'false') == 'true'
 WEBCRATE_SERVICE_DOCTOHTML = os.environ.get('WEBCRATE_SERVICE_DOCTOHTML', 'false') == 'true'
 WEBCRATE_SERVICE_STATS = os.environ.get('WEBCRATE_SERVICE_STATS', 'false') == 'true'
 WEBCRATE_LOCALDNS = os.environ.get('WEBCRATE_LOCALDNS', 'false') == 'true'
@@ -471,6 +472,10 @@ for projectname,project in projects.items():
     if WEBCRATE_SERVICE_HTMLTOPDF:
       if not helpers.is_network_has_connection(f'webcrate_network_{project.name}', 'webcrate-htmltopdf'):
         os.system(f'docker network connect webcrate_network_{project.name} webcrate-htmltopdf')
+    if WEBCRATE_SERVICE_DOCXTOPDF:
+      if not helpers.is_network_has_connection(f'webcrate_network_{project.name}', 'webcrate-docxtopdf'):
+        os.system(f'docker network connect webcrate_network_{project.name} webcrate-docxtopdf')
+        
     if not helpers.is_network_has_connection(f'webcrate_network_{project.name}', 'webcrate-nginx'):
       os.system(f'docker network connect webcrate_network_{project.name} webcrate-nginx')
     if not helpers.is_network_has_connection(f'webcrate_network_{project.name}', 'webcrate-phpmyadmin'):
