@@ -60,6 +60,7 @@ docker run --rm --env-file=$(pwd)/.env \
   -e WEBCRATE_SERVICE_DOCTOHTML=$WEBCRATE_SERVICE_DOCTOHTML \
   -e WEBCRATE_SERVICE_HTMLTOPDF=$WEBCRATE_SERVICE_HTMLTOPDF \
   -e WEBCRATE_SERVICE_DOCXTOPDF=$WEBCRATE_SERVICE_DOCXTOPDF \
+  -e WEBCRATE_SERVICE_DOCXTOPDF=$WEBCRATE_SERVICE_PDFFOOTER \
   -e WEBCRATE_PWD=$(pwd) \
   -v $DOCKER_SOCKET:/var/run/docker.sock \
   -v $(pwd):/webcrate-readonly:ro \
@@ -209,6 +210,19 @@ if [ "$WEBCRATE_SERVICE_DOCXTOPDF" = true ]; then
       --restart="unless-stopped" \
       -p "3002:3000" \
       viktora333/webcrate-utils-libreoffice:stable > /dev/null
+  fi
+fi
+
+if [ "$WEBCRATE_SERVICE_PDFFOOTER" = true ]; then
+  if docker container inspect webcrate-pdffooter >/dev/null 2> /dev/null; then
+    writeLog "Container webcrate-pdffooter exists"
+  else
+    writeLog "Starting webcrate-pdffooter container"
+    docker run -d --env-file=$(pwd)/.env --name webcrate-pdffooter \
+      --network="webcrate_network" --dns=10.255.0.100 \
+      --restart="unless-stopped" \
+      -p "3003:3000" \
+      viktora333/webcrate-utils-pdffooter:stable > /dev/null
   fi
 fi
 

@@ -40,6 +40,13 @@ docxtopdf:
   mysql_db: no
   mysql5_db: no
   postgresql_db: no  
+pdffooter:
+  domain: pdffooter.test
+  port: 3003
+  https: disabled
+  mysql_db: no
+  mysql5_db: no
+  postgresql_db: no    
 grafana:
   domain: grafana.test
   port: 3000
