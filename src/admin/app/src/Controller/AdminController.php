@@ -15,6 +15,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use App\Repository\ProjectRepository;
 use App\Repository\RedirectRepository;
+use App\Repository\DomainRepository;
 use App\Repository\HttpsTypeRepository;
 use App\Repository\BackendRepository;
 use App\Repository\NginxTemplateRepository;
@@ -32,16 +33,18 @@ class AdminController extends AbstractController
     private $cache;
     private $repository;
     private $redirectsRepository;
+    private $domainsRepository;
     private $https_repository;
     private $backend_repository;
     private $nginx_template_repository;
     private $manager;
 
-    public function __construct(CacheInterface $cache, ProjectRepository $repository, RedirectRepository $redirectsRepository, HttpsTypeRepository $https_repository, BackendRepository $backend_repository, NginxTemplateRepository $nginx_template_repository, EntityManagerInterface $manager)
+    public function __construct(CacheInterface $cache, ProjectRepository $repository, RedirectRepository $redirectsRepository, DomainRepository $domainsRepository, HttpsTypeRepository $https_repository, BackendRepository $backend_repository, NginxTemplateRepository $nginx_template_repository, EntityManagerInterface $manager)
     {
         $this->cache = $cache;
         $this->repository = $repository;
         $this->redirectsRepository = $redirectsRepository;
+        $this->domainsRepository = $domainsRepository;
         $this->https_repository = $https_repository;
         $this->backend_repository = $backend_repository;
         $this->nginx_template_repository = $nginx_template_repository;
@@ -103,6 +106,18 @@ class AdminController extends AbstractController
         return $this->render('admin/redirects.html.twig', [
             'controller_name' => 'AdminController',
             'redirects' => $list,
+        ]);
+    }
+
+    /**
+     * @Route("/admin/domains", name="admin-domains")
+     */
+    public function domains()
+    {
+        $list = $this->domainsRepository->getListForTable();
+        return $this->render('admin/domains.html.twig', [
+            'controller_name' => 'AdminController',
+            'domains' => $list,
         ]);
     }
 
@@ -635,5 +650,6 @@ class AdminController extends AbstractController
         $ymlData = Yaml::dump($redirects_list, 3, 2, Yaml::DUMP_OBJECT_AS_MAP);
         return $ymlData;
     }
+
 
 }
