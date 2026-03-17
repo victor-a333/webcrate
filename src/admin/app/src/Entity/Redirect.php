@@ -112,7 +112,7 @@ class Redirect
     public function getActualSha256Sum()
     {
         $redirectName = $this->getName();
-        $path = "/webcrate/meta/redirect-$redirectName.checksum";
+        $path = "/webcrate/meta/redirects/redirect-$redirectName.checksum";
         if ( file_exists($path) ) {
             return file_get_contents($path);
         } else {
@@ -131,7 +131,7 @@ class Redirect
         $yamlData = Yaml::dump($this->toObject(), 3, 2, Yaml::DUMP_OBJECT_AS_MAP);
         $yamlData = json_encode($this->toObject(), JSON_UNESCAPED_SLASHES);
         $redirectName = $this->getName();
-        $path = "/webcrate/meta/redirect-$redirectName.ymldata";
+        $path = "/webcrate/meta/redirects/redirect-$redirectName.ymldata";
         file_put_contents($path, $yamlData);
         return $yamlData;
     }
