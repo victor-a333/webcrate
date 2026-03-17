@@ -25,7 +25,9 @@ async def initCertificates (redirect):
   if redirect.https == 'letsencrypt':
     domains = ",".join(list(filter(lambda domain: domain.split('.')[-1] != 'test', redirect.domains)))
     domains_prev = helpers.load_domains(redirect.name)
-    if len(domains) and (domains != domains_prev or not os.path.isdir(f'/webcrate/letsencrypt/live/{redirect.name}') or not os.listdir(f'/webcrate/letsencrypt/live/{redirect.name}')):
+    cert_dir = f'/webcrate/letsencrypt/live/{redirect.name}'
+    has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
+    if len(domains) and (domains != domains_prev or not has_valid_cert):
       retries = 30
       while retries > 0 and not helpers.is_nginx_up():
         retries -= 1

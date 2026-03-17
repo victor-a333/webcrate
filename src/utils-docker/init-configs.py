@@ -147,7 +147,9 @@ for servicename,service in services.items():
   if service.https == 'letsencrypt':
     domain = service.domain if service.domain.split('.')[-1] != 'test' else ''
     domain_prev = helpers.load_domains(service.name)
-    if ( domain != domain_prev or not os.path.isdir(f'/webcrate/letsencrypt/live/{service.name}') or not os.listdir(f'/webcrate/letsencrypt/live/{service.name}')) and domain != '':
+    cert_dir = f'/webcrate/letsencrypt/live/{service.name}'
+    has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
+    if ( domain != domain_prev or not has_valid_cert) and domain != '':
       with open(f'/webcrate/letsencrypt-meta/domains-{service.name}.txt', 'w') as f:
         f.write(domain)
         f.close()
