@@ -39,7 +39,9 @@ async def initCertificates (redirect):
         path = f'/webcrate/letsencrypt-meta/well-known/{redirect.name}'
         if not os.path.isdir(path):
           os.system(f'mkdir -p {path}')
-        os.system(f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {redirect.name} --expand --webroot --webroot-path {path} -d {domains}')
+        certbot_cmd = f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {redirect.name} --expand --webroot --webroot-path {path} -d {domains}'
+        certbot_output = os.popen(certbot_cmd).read()
+        log.write(f'{redirect.name} - certbot output: {certbot_output}')
         os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/letsencrypt')
         os.system(f'rm -rf {path}')
         print(f'{redirect.name} - letsencrypt certificate generated')
