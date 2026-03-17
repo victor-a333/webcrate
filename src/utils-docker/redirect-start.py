@@ -27,11 +27,13 @@ async def initCertificates (redirect):
     domains_prev = helpers.load_domains(redirect.name)
     cert_dir = f'/webcrate/letsencrypt/live/{redirect.name}'
     has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
+    log.write(f'{redirect.name} - letsencrypt: domains={domains}, domains_prev={domains_prev}, has_valid_cert={has_valid_cert}')
     if len(domains) and (domains != domains_prev or not has_valid_cert):
       retries = 30
       while retries > 0 and not helpers.is_nginx_up():
         retries -= 1
         await asyncio.sleep(2)
+      log.write(f'{redirect.name} - nginx_up_retries_remaining={retries}')
       if retries > 0:
         with open(f'/webcrate/letsencrypt-meta/domains-{redirect.name}.txt', 'w') as f:
           f.write(domains)
