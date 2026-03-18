@@ -270,12 +270,12 @@ for projectname,project in projects.items():
         with open(f'/webcrate/dnsmasq/hosts/{project.name}.hosts', 'w') as f:
           f.write(f'{DOCKER_HOST_IP} {" ".join(project.domains)}\n')
           f.close()
-    with open(f'/webcrate/meta/{projectname}.jsonDump', 'w') as f:
+    with open(f'/webcrate/meta/projects/{projectname}.jsonDump', 'w') as f:
       f.write(dump)
       f.close()
     hash_object = hashlib.sha256(dump.encode())
     hex_dig = hash_object.hexdigest()
-    os.system(f'printf "{hex_dig}" > /webcrate/meta/{projectname}.checksum')
+    os.system(f'printf "{hex_dig}" > /webcrate/meta/projects/{projectname}.checksum')
 
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/meta')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/nginx')
