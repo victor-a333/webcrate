@@ -22,7 +22,7 @@ REDIRECT_NAME = sys.argv[1]
 #cleanup configs
 os.system(f'rm /webcrate/nginx/confs/redirect-{REDIRECT_NAME}.conf > /dev/null 2>&1')
 os.system(f'rm /webcrate/dnsmasq/hosts/redirect-{REDIRECT_NAME}.hosts > /dev/null 2>&1')
-os.system(f'rm /webcrate/meta/redirects/redirect-{REDIRECT_NAME}.config > /dev/null 2>&1')
+os.system(f'rm /webcrate/meta/redirects/redirect-{REDIRECT_NAME}.jsonDump > /dev/null 2>&1')
 
 for redirectname,redirect in redirects.items():
   if REDIRECT_NAME == redirectname:
