@@ -351,7 +351,7 @@ class Project
     public function getActualSha256Sum()
     {
         $projectName = $this->getName();
-        $path = "/webcrate/meta/$projectName.checksum";
+        $path = "/webcrate/meta/projects/$projectName.checksum";
         if ( file_exists($path) ) {
             return file_get_contents($path);
         } else {
@@ -370,7 +370,7 @@ class Project
         $yamlData = Yaml::dump($this->toObject(), 3, 2, Yaml::DUMP_OBJECT_AS_MAP);
         $yamlData = json_encode($this->toObject(), JSON_UNESCAPED_SLASHES);
         $projectName = $this->getName();
-        $path = "/webcrate/meta/${projectName}.ymldata";
+        $path = "/webcrate/meta/projects/${projectName}.ymldata";
         file_put_contents($path, $yamlData);
         return $yamlData;
     }
