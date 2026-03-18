@@ -33,6 +33,7 @@ function Start() {
   source ./bin/includes/generate-config.inc
   source ./bin/includes/services.inc
   source ./bin/includes/projects.inc
+  source ./bin/includes/redirects.inc
   writeLog "Started"
 }
 
