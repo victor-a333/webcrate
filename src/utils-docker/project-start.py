@@ -36,11 +36,15 @@ async def initCertificates (project):
   if project.https == 'letsencrypt':
     domains = ",".join(list(filter(lambda domain: domain.split('.')[-1] != 'test', project.domains)))
     domains_prev = helpers.load_domains(project.name)
-    if len(domains) and (domains != domains_prev or not os.path.isdir(f'/webcrate/letsencrypt/live/{project.name}') or not os.listdir(f'/webcrate/letsencrypt/live/{project.name}')):
+    cert_dir = f'/webcrate/letsencrypt/live/{project.name}'
+    has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
+    log.write(f'{project.name} - letsencrypt: domains={domains}, domains_prev={domains_prev}, has_valid_cert={has_valid_cert}')
+    if len(domains) and (domains != domains_prev or not has_valid_cert):
       retries = 30
       while retries > 0 and not helpers.is_nginx_up():
         retries -= 1
         await asyncio.sleep(2)
+      log.write(f'{project.name} - nginx_up_retries_remaining={retries}')
       if retries > 0:
         with open(f'/webcrate/letsencrypt-meta/domains-{project.name}.txt', 'w') as f:
           f.write(domains)
@@ -48,7 +52,10 @@ async def initCertificates (project):
         path = f'/webcrate/letsencrypt-meta/well-known/{project.name}'
         if not os.path.isdir(path):
           os.system(f'mkdir -p {path}')
-        os.system(f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {project.name} --expand --webroot --webroot-path {path} -d {domains}')
+        certbot_cmd = f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {project.name} --expand --webroot --webroot-path {path} -d {domains}'
+        certbot_output = os.popen(certbot_cmd).read()
+        log.write(f'{project.name} - certbot output: {certbot_output}')
+        
         os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/letsencrypt')
         os.system(f'rm -rf {path}')
         print(f'{project.name} - letsencrypt certificate generated')
