@@ -6,6 +6,7 @@ import yaml
 import idna
 import helpers
 import asyncio
+import subprocess
 from munch import munchify
 from log import log
 
@@ -31,6 +32,12 @@ PROJECT_NAME = sys.argv[1]
 IS_RELOAD = len(sys.argv) > 2 and sys.argv[2] == 'reload'
 volumes = WEBCRATE_PROJECTS_FOLDERS.split(':')
 
+def reload_nginx(project_name, reason):
+  reload_cmd = 'docker exec webcrate-nginx nginx -t && docker exec webcrate-nginx nginx -s reload'
+  reload_result = os.system(f'{reload_cmd} >/dev/null 2>&1')
+  log.write(f'{project_name} - nginx reload before {reason}: exit_code={reload_result}')
+  return reload_result == 0
+
 async def initCertificates (project):
   nginx_reload_needed = False
   if project.https == 'letsencrypt':
@@ -46,20 +53,25 @@ async def initCertificates (project):
         await asyncio.sleep(2)
       log.write(f'{project.name} - nginx_up_retries_remaining={retries}')
       if retries > 0:
-        with open(f'/webcrate/letsencrypt-meta/domains-{project.name}.txt', 'w') as f:
-          f.write(domains)
-          f.close()
         path = f'/webcrate/letsencrypt-meta/well-known/{project.name}'
         if not os.path.isdir(path):
           os.system(f'mkdir -p {path}')
+        reload_nginx(project.name, 'letsencrypt challenge')
         certbot_cmd = f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {project.name} --expand --webroot --webroot-path {path} -d {domains}'
-        certbot_output = os.popen(certbot_cmd).read()
+        certbot_result = subprocess.run(certbot_cmd, shell=True, capture_output=True, text=True)
+        certbot_output = f'{certbot_result.stdout}{certbot_result.stderr}'
         log.write(f'{project.name} - certbot output: {certbot_output}')
         
         os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/letsencrypt')
         os.system(f'rm -rf {path}')
-        print(f'{project.name} - letsencrypt certificate generated')
-        nginx_reload_needed = True
+        if certbot_result.returncode == 0:
+          with open(f'/webcrate/letsencrypt-meta/domains-{project.name}.txt', 'w') as f:
+            f.write(domains)
+            f.close()
+          print(f'{project.name} - letsencrypt certificate generated')
+          nginx_reload_needed = True
+        else:
+          print(f'{project.name} - letsencrypt certificate failed')
 
   if project.https == 'openssl':
     conf = helpers.genereate_openssl_conf(project.name, project.domains)
