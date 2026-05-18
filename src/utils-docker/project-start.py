@@ -278,6 +278,7 @@ async def startRedis (project):
     os.system(f"""
       docker run -d \
         --name webcrate-{project.name}-redis \
+        --restart="unless-stopped" \
         --network="webcrate_network_{project.name}" \
         -e REDIS_PASSWORD="{REDIS_PASSWORD}" \
         redis:7 \
