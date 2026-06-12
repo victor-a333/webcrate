@@ -11,7 +11,7 @@ RUN pacman-key --init && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
         wget tmux ruby python-pip fish libmemcached-awesome supervisor && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
-    yes | pacman -Scc && \
+    rm -rf /var/cache/pacman/pkg/* && \
     useradd -m -s /bin/bash dev && \
     usermod -p "dev" dev && \
     echo 'dev ALL=(ALL) NOPASSWD: ALL' | EDITOR='tee -a' visudo && \
@@ -30,7 +30,6 @@ USER dev
 
 #install aur packages
 RUN yay --gpgflags "--keyserver hkp://keyserver.ubuntu.com" --answeredit n --answerdiff n --noconfirm --mflags --nocheck -S php84 php84-exif php84-fileinfo php84-ctype php84-pecl php84-pear php84-zip php84-xmlreader php84-xmlwriter php84-mbstring php84-openssl php84-xml php84-fpm php84-intl php84-sqlite php84-gd php84-xsl php84-simplexml php84-phar php84-tidy php84-cli php84-tokenizer php84-curl php84-opcache php84-iconv php84-mysql php84-pdo php84-soap php84-imagick && \
-    yes | yay -Scc && \
     rm -rf /home/dev/.cache
 
 USER root
