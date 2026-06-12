@@ -7,6 +7,10 @@ if test -e ~/config.sh; then
     source ~/config.sh
 fi
 
+mise_config="$HOME/$DATA_FOLDER/mise.toml"
+if [ -f "$mise_config" ]; then
+    /usr/local/bin/mise trust "$mise_config" >/dev/null 2>&1
+fi
 eval "$(/usr/local/bin/mise activate bash)"
 
 [ -d "$HOME/$DATA_FOLDER" ] && cd ~/$DATA_FOLDER;
