@@ -13,6 +13,7 @@ sed -i "s/%USERNAME%/$WEBCRATE_PROJECT/g" /etc/supervisord.conf;
 chown root:root /etc/supervisord.conf
 chmod a+r /etc/supervisord.conf
 /webcrate/sync_ssh_keys.sh
+/webcrate/install-applications.sh || exit 1
 cp /webcrate/pools/$WEBCRATE_PROJECT.conf /etc/php84/php-fpm.d/$WEBCRATE_PROJECT.conf
 /webcrate/parse-projects.py
 exec systemctl init

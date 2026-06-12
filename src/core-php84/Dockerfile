@@ -7,7 +7,6 @@ RUN pacman-key --init && \
     pacman --noconfirm -Sy archlinux-keyring && \
     pacman --needed --noconfirm -Syu && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
-    pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssl-1.1/openssl-1.1-1.1.1.w-2-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
         wget tmux ruby python-pip fish libmemcached-awesome supervisor && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
@@ -61,11 +60,6 @@ RUN git clone https://aur.archlinux.org/docker-systemctl-replacement-git.git && 
 USER root
 WORKDIR /root
 
-#install wkhtmltox(require openssl-1.1)
-RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-3/wkhtmltox-0.12.6-3.archlinux-x86_64.pkg.tar.xz && \
-    tar -xf wkhtmltox-*.tar.xz -C / && \
-    rm -rf ./wkhtmltox-*
-
 RUN wget -O drush.phar https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar && \
     chmod +x drush.phar && \
     mv drush.phar /usr/bin/drush && \
@@ -118,9 +112,10 @@ RUN wget https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-
 WORKDIR /
 COPY ["fishrc.fish", "/etc/fish/conf.d/"]
 COPY ["bashrc.sh", "/etc/profile.d/"]
-COPY ["versions.py", "parse-projects.py", "sync_ssh_keys.sh", "log.py", "supervisord.conf.template", "/webcrate/"]
+COPY ["versions.py", "parse-projects.py", "sync_ssh_keys.sh", "install-applications.sh", "log.py", "supervisord.conf.template", "/webcrate/"]
 COPY ["entrypoint.sh", "/"]
 RUN chmod u+x /webcrate/sync_ssh_keys.sh && \
+    chmod u+x /webcrate/install-applications.sh && \
     rm /etc/mail/exim.conf && \
     chmod u+x /webcrate/parse-projects.py && \
     chmod u+x /webcrate/versions.py && \
