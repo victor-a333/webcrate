@@ -100,6 +100,7 @@ for projectname,project in projects.items():
         if project.backend == 'php':
           php_path_prefix = {
             '81': '81',
+            '84': '84',
             '56': '56',
             '73': '73',
             '74': '74'
