@@ -28,7 +28,7 @@ RUN curl -sSLo /tmp/debsuryorg-archive-keyring.deb https://packages.sury.org/deb
     apt-get --assume-yes install php8.4 php8.4-zip php8.4-xml php8.4-mbstring php8.4-fpm \
         php8.4-intl php8.4-gd php8.4-xsl php8.4-tidy php8.4-curl php8.4-opcache php8.4-soap \
         php8.4-sqlite3 php8.4-mysql php8.4-memcached php8.4-redis \
-        php-pear php8.4-dev php8.4-imagick imagemagick composer && \
+        php-pear php8.4-dev php8.4-imagick imagemagick && \
     rm -rf /var/lib/apt/lists/*
 
 #install PIE and timezonedb
@@ -46,6 +46,9 @@ RUN wget https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-
 RUN wget -O drush.phar https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar && \
     chmod +x drush.phar && \
     mv drush.phar /usr/bin/drush && \
+    wget -O composer.phar https://getcomposer.org/download/latest-stable/composer.phar && \
+    chmod +x composer.phar && \
+    mv composer.phar /usr/bin/composer && \
     ssh-keygen -A
 
 #install compass
