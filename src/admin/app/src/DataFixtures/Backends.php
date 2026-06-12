@@ -8,7 +8,7 @@ use App\Entity\Backend;
 
 class Backends extends Fixture
 {
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
 
         $backends = [

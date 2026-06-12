@@ -8,7 +8,7 @@ use App\Entity\HttpsType;
 class HttpsTypes extends Fixture
 {
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
 
         $types = [
