@@ -7,8 +7,9 @@ RUN pacman-key --init && \
     pacman --noconfirm -Sy archlinux-keyring && \
     pacman --needed --noconfirm -Syu && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssl-1.1/openssl-1.1-1.1.1.w-2-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
-        wget tmux ruby python-pip fish libmemcached-awesome supervisor openssl-1.1 && \
+        wget tmux ruby python-pip fish libmemcached-awesome supervisor && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
     yes | pacman -Scc && \
     useradd -m -s /bin/bash dev && \
