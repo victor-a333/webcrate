@@ -2,7 +2,8 @@ FROM archlinux:latest
 
 #install system utils and services
 RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S git nano openssh base-devel unzip composer npm mc iputils cronie inetutils wget tmux ruby pyenv python-yaml python-munch python-setuptools fish exim postgresql-libs libjpeg && \
+    pacman --needed --noconfirm -S git nano base-devel unzip composer npm mc iputils cronie inetutils wget tmux ruby pyenv python-yaml python-pip python-munch python-setuptools fish exim postgresql-libs libjpeg-turbo && \
+    pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
     yes | pacman -Scc && \
     useradd -m -s /bin/bash dev && \
     usermod -p "dev" dev && \
@@ -47,6 +48,7 @@ RUN git clone https://github.com/oh-my-fish/oh-my-fish . && \
     rm -rf ./* && \
     cp /root/.config/fish/conf.d/omf.fish /etc/fish/conf.d/omf.fish && \
     fish -C "omf install cbjohnson" && \
+    fish -C "omf install default" && \
     cp /webcrate-fish/omf/themes/default/functions/fish_right_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_right_prompt.fish
 COPY fish_prompt.fish /webcrate-fish/omf/themes/cbjohnson/fish_prompt.fish
 

@@ -8,9 +8,11 @@ RUN pacman-key --init && \
     pacman --needed --noconfirm -Syu && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
     pacman --needed --noconfirm -S sudo git nano exim base-devel unzip npm mariadb-clients mc iputils cronie inetutils \
-        wget tmux ruby python-pip fish libmemcached-awesome supervisor openssl-1.1 && \
+        wget tmux ruby python-pip fish libmemcached-awesome supervisor && \
     pacman -U --noconfirm https://archive.archlinux.org/packages/o/openssh/openssh-9.6p1-1-x86_64.pkg.tar.zst && \
-    yes | pacman -Scc && \
+    pacman -U --noconfirm \
+      https://archive.archlinux.org/packages/o/openssl-1.1/openssl-1.1-1.1.1.w-1-x86_64.pkg.tar.zst && \
+    rm -rf /var/cache/pacman/pkg/* && \
     useradd -m -s /bin/bash dev && \
     usermod -p "dev" dev && \
     echo 'dev ALL=(ALL) NOPASSWD: ALL' | EDITOR='tee -a' visudo && \
@@ -29,7 +31,7 @@ USER dev
 
 #install aur packages
 RUN yay --gpgflags "--keyserver hkp://keyserver.ubuntu.com" --answeredit n --answerdiff n --noconfirm --mflags --nocheck -S php81 php81-exif php81-fileinfo php81-ctype php81-pecl php81-pear php81-zip php81-xmlreader php81-xmlwriter php81-mbstring php81-openssl php81-xml php81-fpm php81-intl php81-sqlite php81-gd php81-xsl php81-simplexml php81-phar php81-tidy php81-cli php81-tokenizer php81-curl php81-opcache php81-iconv php81-mysql php81-pdo php81-soap php81-imagick && \
-    yes | yay -Scc && \
+    sudo rm -rf /var/cache/pacman/pkg/* && \
     rm -rf /home/dev/.cache
 
 USER root
