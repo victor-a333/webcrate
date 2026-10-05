@@ -72,6 +72,7 @@ module.exports = {
             .entry('admin-project').add('./src/admin-project.js').end()
             .entry('admin-redirects').add('./src/admin-redirects.js').end()
             .entry('admin-redirect').add('./src/admin-redirect.js').end()
+            .entry('admin-domains').add('./src/admin-domains.js').end()
             .entry('icons').add('./src/icons/icons.js').end()
 
         //icon font generation

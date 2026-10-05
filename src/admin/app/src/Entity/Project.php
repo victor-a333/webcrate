@@ -133,6 +133,7 @@ class Project
      */
     private $ftps;
 
+
     /**
      * @ORM\Column(type="json", nullable=true)
      */
@@ -686,5 +687,6 @@ class Project
 
         return $this;
     }
+
 
 }

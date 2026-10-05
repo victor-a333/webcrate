@@ -6,6 +6,7 @@
     <b-navbar-nav>
       <b-nav-item href="/admin/projects">Projects</b-nav-item>
       <b-nav-item href="/admin/redirects">Redirects</b-nav-item>
+      <b-nav-item href="/admin/domains">Domains</b-nav-item>
     </b-navbar-nav>
     <b-navbar-nav class="ml-auto">
       <b-nav-item-dropdown right>
