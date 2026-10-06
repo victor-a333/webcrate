@@ -4,10 +4,12 @@ RUN apk update &&\
     docker \
     cronie \
     certbot \
+    borgbackup \
     duplicity \
     lftp \
     pwgen \
     openssl \
+    openssh-client \
     mariadb-client \
     python3 py3-yaml py3-idna py3-munch \
     postgresql-client &&\
