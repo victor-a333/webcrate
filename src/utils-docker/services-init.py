@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shlex
 import sys
 import yaml
 import helpers
@@ -31,12 +32,12 @@ helpers.init_openssl_root_conf()
 helpers.init_letsencrypt_conf()
 
 async def startMysql (service):
-  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
+  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1]
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql-services/{service.name}') or not os.listdir(f'/webcrate/mysql-services/{service.name}'):
     os.system(f'mkdir -p /webcrate/mysql-services/{service.name}')
     os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/mysql-services/{service.name}')
-    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD="{mysql_root_password}"'
+    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD={shlex.quote(mysql_root_password)}'
   if helpers.is_container_exists(f'webcrate-{service.name}-mysql'):
     log.write(f'{service.name} - mysql exists')
   else:
@@ -56,8 +57,8 @@ async def startMysql (service):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
-    if mysql_database_found == 0:
+    mysql_database_found = helpers.mysql_database_exists(f'webcrate-{service.name}-mysql', mysql_root_password, service.name)
+    if not mysql_database_found:
       if os.path.isfile(f'/webcrate/secrets/{service.name}-service-mysql.txt'):
         with open(f'/webcrate/secrets/{service.name}-service-mysql.txt', 'r') as f:
           for line in f:
@@ -75,10 +76,7 @@ async def startMysql (service):
           f.close()
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/secrets/{service.name}-service-mysql.txt')
 
-      os.system(f'mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
-      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
-      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
-      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      helpers.create_mysql_database_and_user(f'webcrate-{service.name}-mysql', mysql_root_password, service.name, mysql_service_password)
       log.write(f'{service.name} - mysql user and db created')
     else:
       log.write(f'{service.name} - mysql user and db exists')
