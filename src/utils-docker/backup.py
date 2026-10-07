@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import tempfile
 import yaml
 import sys
 from datetime import datetime
@@ -132,29 +133,24 @@ def store_borg_database_backup(destination, backup_uris, max_full_backups, dump_
       continue
 
     initialize_borg_repository(repository)
-    dump_process = subprocess.Popen(
-      dump_command,
-      stdout=subprocess.PIPE,
-      env=dump_environment,
-    )
-    try:
-      borg_result = subprocess.run(
+    with tempfile.TemporaryFile() as dump_file:
+      subprocess.run(
+        dump_command,
+        stdout=dump_file,
+        env=dump_environment,
+        check=True,
+      )
+      dump_file.seek(0)
+      subprocess.run(
         [
           'borg', 'create', '--stats',
           '--stdin-name', database_filename,
           f'{repository}::{borg_archive_name("database")}',
           '-',
         ],
-        stdin=dump_process.stdout,
+        stdin=dump_file,
+        check=True,
       )
-    finally:
-      dump_process.stdout.close()
-
-    dump_return_code = dump_process.wait()
-    if dump_return_code != 0:
-      raise subprocess.CalledProcessError(dump_return_code, dump_command)
-    if borg_result.returncode != 0:
-      raise subprocess.CalledProcessError(borg_result.returncode, borg_result.args)
     prune_borg_repository(repository, max_full_backups)
 
 def store_files_backup(source, destination, backup_uris, full_backup_days, max_full_backups, filters, backup_backend):
@@ -211,13 +207,15 @@ def backup_mysql_database(name, host, password, destination, database_type, back
   print(f'backup {database_type} db for {name}')
   print(f'=========================================')
   sys.stdout.flush()
-  dump_command = ['mysqldump', '--single-transaction', '--max_allowed_packet=64M', '-h', host, '-u', 'root', f'-p{password}', name]
+  dump_command = ['mariadb-dump', '--skip-ssl', '--single-transaction', '--max_allowed_packet=64M', '-h', host, '-u', 'root', name]
+  dump_environment = os.environ.copy()
+  dump_environment['MYSQL_PWD'] = password
   if backup_backend == 'borg':
-    store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, f'{name}.sql')
+    store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, f'{name}.sql', dump_environment)
   else:
     clear_database_backup_tmp()
     with open(f'/webcrate/backup-tmp/{name}.sql', 'wb') as dump_file:
-      subprocess.run(dump_command, stdout=dump_file, check=True)
+      subprocess.run(dump_command, stdout=dump_file, env=dump_environment, check=True)
     store_database_backup(destination, backup_uris, full_backup_days, max_full_backups)
     clear_database_backup_tmp()
 

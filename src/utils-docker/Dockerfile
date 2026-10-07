@@ -1,7 +1,6 @@
-FROM alpine:3.17
-RUN apk update &&\
-    apk add \
-    docker \
+FROM alpine:3.24
+RUN apk add --no-cache \
+    docker-cli \
     cronie \
     certbot \
     borgbackup \
@@ -12,8 +11,7 @@ RUN apk update &&\
     openssh-client \
     mariadb-client \
     python3 py3-yaml py3-idna py3-munch \
-    postgresql-client &&\
-    rm -rf /var/cache/apk/*
+    postgresql-client
 RUN mkdir /webcrate
 COPY [ \
     "entrypoint.sh", \
