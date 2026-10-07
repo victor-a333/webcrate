@@ -34,6 +34,79 @@ WEBCRATE_BACKUP_URIS=( file:///webcrate/backup ssh://backup@example.org/./webcra
 > Borg repositories are currently initialized with `--encryption=none`. Use a
 > transport and storage location appropriate for the sensitivity of the data.
 
+## Hetzner Storage Box with Borg
+
+In the Hetzner Console, enable **SSH Support** for the Storage Box. Also enable
+**External Reachability** when Webcrate runs outside the Hetzner network. Borg
+uses Hetzner's extended SSH service on port 23.
+
+Create a dedicated SSH key on the Webcrate host:
+
+```bash
+mkdir -p var/ssh
+ssh-keygen -t ed25519 -f var/ssh/private-key -N ""
+```
+
+Install the public key on the Storage Box, replacing `uXXXXX` with the Storage
+Box account name:
+
+```bash
+cat var/ssh/private-key.pub \
+  | ssh -p 23 uXXXXX@uXXXXX.your-storagebox.de install-ssh-key
+```
+
+Configure `.env` to use the local destination and the Storage Box together:
+
+```dotenv
+WEBCRATE_BACKUP_BACKEND=borg
+WEBCRATE_BACKUP_URIS=( file:///webcrate/backup ssh://uXXXXX@uXXXXX.your-storagebox.de:23/./webcrate )
+WEBCRATE_BORG_SSH_KEY=private-key
+```
+
+`WEBCRATE_BORG_SSH_KEY` is only the private key filename from `var/ssh`, not a
+path or an SSH command. The utilities image sets `BORG_RSH=/borg-ssh.sh`; this
+wrapper selects the configured key and enables batch mode and host-key
+acceptance. The image also selects Hetzner's `borg-1.4` remote executable.
+
+To store backups only on the Storage Box, omit the local URI:
+
+```dotenv
+WEBCRATE_BACKUP_URIS=( ssh://uXXXXX@uXXXXX.your-storagebox.de:23/./webcrate )
+```
+
+Recreate the utilities container so that it receives the new environment:
+
+```bash
+./bin/webcrate restart
+```
+
+Test SSH access from the utilities container:
+
+```bash
+docker exec webcrate-utils-docker \
+  ssh \
+  -i /webcrate-readonly/var/ssh/private-key \
+  -p 23 \
+  -o BatchMode=yes \
+  -o StrictHostKeyChecking=accept-new \
+  uXXXXX@uXXXXX.your-storagebox.de \
+  pwd
+```
+
+Run a backup after the connection succeeds:
+
+```bash
+./bin/webcrate backup all all
+```
+
+Webcrate appends its backend and logical backup paths to each base URI. For
+example, the configuration backup above is stored in
+`./webcrate/borg/webcrate/files` on the Storage Box.
+
+> `var/ssh` is included in the Webcrate configuration backup, and Borg
+> repositories are currently unencrypted. Use a dedicated Storage Box key and
+> do not reuse it for access to other systems.
+
 ## Running backups
 
 Run every configured backup:
@@ -84,9 +157,11 @@ the `<backend>/` prefix. They are not moved or deleted automatically. Use the
 legacy path explicitly when restoring one of those backups.
 
 `WEBCRATE_MAX_FULL_BACKUPS` controls the number of retained full Duplicity
-backup chains and the number of retained Borg archives. `WEBCRATE_FULL_BACKUP_DAYS`
-controls only how often Duplicity starts a new full chain. Borg creates an
-archive on every run.
+backup chains. `WEBCRATE_FULL_BACKUP_DAYS` controls how often Duplicity starts
+a new full chain. Borg creates an archive on every run and retains
+`WEBCRATE_FULL_BACKUP_DAYS * WEBCRATE_MAX_FULL_BACKUPS` archives. With the
+default daily schedule and values `7` and `20`, Borg retains approximately 140
+days.
 
 ## Before restoring
 
