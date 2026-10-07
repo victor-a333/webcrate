@@ -48,6 +48,14 @@ BACKUP_TYPE = sys.argv[2] if len(sys.argv) > 2 else 'all'
 if BACKUP_BACKEND not in ('borg', 'duplicity'):
   raise ValueError(f'Unsupported backup backend: {BACKUP_BACKEND}')
 
+BACKUP_ERRORS = []
+
+def record_backup_error(backup_type, repository, error):
+  message = f'Backup failed: type={backup_type}, repository={repository}, error={error}'
+  BACKUP_ERRORS.append(message)
+  log.write(message)
+  print(message, file=sys.stderr)
+
 def get_borg_repository(backup_uri, destination):
   if backup_uri.lower().startswith('ftp://'):
     message = f'Skip unsupported Borg FTP backup URI: {backup_uri}'
@@ -64,18 +72,40 @@ def get_borg_repository(backup_uri, destination):
 
   return repository_uri
 
+def get_borg_environment():
+  environment = os.environ.copy()
+  environment['BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK'] = 'yes'
+  environment['BORG_RELOCATED_REPO_ACCESS_IS_OK'] = 'yes'
+  return environment
+
 def initialize_borg_repository(repository):
+  environment = get_borg_environment()
   result = subprocess.run(
     ['borg', 'info', repository],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
+    env=environment,
+    text=True,
+    capture_output=True,
   )
-  if result.returncode != 0:
-    subprocess.run(['borg', 'init', '--encryption=none', repository], check=True)
+  if result.returncode == 0:
+    return
 
-def prune_borg_repository(repository, max_full_backups):
+  if os.path.exists(repository):
+    raise RuntimeError(f'Could not access existing Borg repository {repository}: {result.stderr.strip()}')
+
   subprocess.run(
-    ['borg', 'prune', '--list', '--keep-last', str(max_full_backups), repository],
+    ['borg', 'init', '--encryption=none', repository],
+    env=environment,
+    check=True,
+  )
+
+def get_borg_archive_retention(full_backup_days, max_full_backups):
+  return int(full_backup_days) * int(max_full_backups)
+
+def prune_borg_repository(repository, full_backup_days, max_full_backups):
+  archive_retention = get_borg_archive_retention(full_backup_days, max_full_backups)
+  subprocess.run(
+    ['borg', 'prune', '--list', '--keep-last', str(archive_retention), repository],
+    env=get_borg_environment(),
     check=True,
   )
 
@@ -125,33 +155,38 @@ def store_database_backup(destination, backup_uris, full_backup_days, max_full_b
     )
     sys.stdout.flush()
 
-def store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, database_filename, dump_environment=None):
+def store_borg_database_backup(destination, backup_uris, full_backup_days, max_full_backups, dump_command, database_filename, dump_environment=None):
   destination = backend_destination('borg', destination)
   for backup_uri in backup_uris:
-    repository = get_borg_repository(backup_uri, destination)
-    if not repository:
-      continue
+    repository = f'{backup_uri.rstrip("/")}/{destination}'
+    try:
+      repository = get_borg_repository(backup_uri, destination)
+      if not repository:
+        continue
 
-    initialize_borg_repository(repository)
-    with tempfile.TemporaryFile() as dump_file:
-      subprocess.run(
-        dump_command,
-        stdout=dump_file,
-        env=dump_environment,
-        check=True,
-      )
-      dump_file.seek(0)
-      subprocess.run(
-        [
-          'borg', 'create', '--stats',
-          '--stdin-name', database_filename,
-          f'{repository}::{borg_archive_name("database")}',
-          '-',
-        ],
-        stdin=dump_file,
-        check=True,
-      )
-    prune_borg_repository(repository, max_full_backups)
+      initialize_borg_repository(repository)
+      with tempfile.TemporaryFile() as dump_file:
+        subprocess.run(
+          dump_command,
+          stdout=dump_file,
+          env=dump_environment,
+          check=True,
+        )
+        dump_file.seek(0)
+        subprocess.run(
+          [
+            'borg', 'create', '--stats',
+            '--stdin-name', database_filename,
+            f'{repository}::{borg_archive_name("database")}',
+            '-',
+          ],
+          stdin=dump_file,
+          env=get_borg_environment(),
+          check=True,
+        )
+      prune_borg_repository(repository, full_backup_days, max_full_backups)
+    except Exception as error:
+      record_backup_error('database', repository, error)
 
 def store_files_backup(source, destination, backup_uris, full_backup_days, max_full_backups, filters, backup_backend):
   destination = backend_destination(backup_backend, destination)
@@ -161,17 +196,21 @@ def store_files_backup(source, destination, backup_uris, full_backup_days, max_f
 
   for backup_uri in backup_uris:
     if backup_backend == 'borg':
-      repository = get_borg_repository(backup_uri, destination)
-      if not repository:
-        continue
-      initialize_borg_repository(repository)
-      borg_command = ['borg', 'create', '--stats']
-      for mode, path in filters:
-        prefix = '+' if mode == 'include' else '-'
-        borg_command.append(f'--pattern={prefix}sh:{borg_pattern_path(path)}')
-      borg_command.extend([f'{repository}::{borg_archive_name("files")}', source])
-      subprocess.run(borg_command, check=True)
-      prune_borg_repository(repository, max_full_backups)
+      repository = f'{backup_uri.rstrip("/")}/{destination}'
+      try:
+        repository = get_borg_repository(backup_uri, destination)
+        if not repository:
+          continue
+        initialize_borg_repository(repository)
+        borg_command = ['borg', 'create', '--stats']
+        for mode, path in filters:
+          prefix = '+' if mode == 'include' else '-'
+          borg_command.append(f'--pattern={prefix}sh:{borg_pattern_path(path)}')
+        borg_command.extend([f'{repository}::{borg_archive_name("files")}', source])
+        subprocess.run(borg_command, env=get_borg_environment(), check=True)
+        prune_borg_repository(repository, full_backup_days, max_full_backups)
+      except Exception as error:
+        record_backup_error('files', repository, error)
     else:
       duplicity_filters = ''.join(f'--{mode} "{path}" ' for mode, path in filters)
       os.system(f'duplicity --verbosity notice '
@@ -211,7 +250,7 @@ def backup_mysql_database(name, host, password, destination, database_type, back
   dump_environment = os.environ.copy()
   dump_environment['MYSQL_PWD'] = password
   if backup_backend == 'borg':
-    store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, f'{name}.sql', dump_environment)
+    store_borg_database_backup(destination, backup_uris, full_backup_days, max_full_backups, dump_command, f'{name}.sql', dump_environment)
   else:
     clear_database_backup_tmp()
     with open(f'/webcrate/backup-tmp/{name}.sql', 'wb') as dump_file:
@@ -229,7 +268,7 @@ def backup_postgresql_database(name, host, password, destination, backup_uris, f
   dump_environment = os.environ.copy()
   dump_environment['PGPASSWORD'] = password
   if backup_backend == 'borg':
-    store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, f'{name}.pgsql', dump_environment)
+    store_borg_database_backup(destination, backup_uris, full_backup_days, max_full_backups, dump_command, f'{name}.pgsql', dump_environment)
   else:
     clear_database_backup_tmp()
     with open(f'/webcrate/backup-tmp/{name}.pgsql', 'wb') as dump_file:
@@ -309,5 +348,11 @@ for projectname,project in projects.items():
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/backup')
 os.system(f'chmod -R a-rw,u+rw /webcrate/backup')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/duplicity')
-log.write(f'Backup process ended')
+if BACKUP_ERRORS:
+  summary = f'Backup process ended with {len(BACKUP_ERRORS)} error(s)'
+  log.write(summary)
+  print(summary, file=sys.stderr)
+  sys.stderr.flush()
+else:
+  log.write(f'Backup process ended successfully')
 sys.stdout.flush()
