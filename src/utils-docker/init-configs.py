@@ -41,7 +41,7 @@ for servicename,service in services.items():
       retries -= 1
       time.sleep(5)
     if retries > 0:
-      mysql_database_found = int(os.popen(f'mysql -u root -h webcrate-mysql -p"{mysql_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
+      mysql_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-mysql -p"{mysql_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
       if mysql_database_found == 0:
         if os.path.isfile(f'/webcrate/secrets/{service.name}-service-mysql.txt'):
           with open(f'/webcrate/secrets/{service.name}-service-mysql.txt', 'r') as f:
@@ -59,10 +59,10 @@ for servicename,service in services.items():
             f.write(f'password={mysql_service_password}\n')
             f.close()
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/secrets/{service.name}-service-mysql.txt')
-        os.system(f'mysql -u root -h webcrate-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
-        os.system(f"mysql -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
-        os.system(f"mysql -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
-        os.system(f"mysql -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+        os.system(f'mariadb --skip-ssl -u root -h webcrate-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
         print(f'mysql user {service.name} and db created')
       else:
         print(f'mysql user {service.name} and db already exists')
@@ -74,7 +74,7 @@ for servicename,service in services.items():
       retries -= 1
       time.sleep(5)
     if retries > 0:
-      mysql5_database_found = int(os.popen(f'mysql -u root -h webcrate-mysql5 -p"{mysql5_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
+      mysql5_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-mysql5 -p"{mysql5_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
       if mysql5_database_found == 0:
         if os.path.isfile(f'/webcrate/secrets/{service.name}-service-mysql5.txt'):
           with open(f'/webcrate/secrets/{service.name}-service-mysql5.txt', 'r') as f:
@@ -98,10 +98,10 @@ for servicename,service in services.items():
           f.write(f'password={mysql5_service_password}\n')
           f.close()
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/secrets/{service.name}-service-mysql5.txt')
-        os.system(f'mysql -u root -h webcrate-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
-        os.system(f"mysql -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql5_service_password}\\\";\"")
-        os.system(f"mysql -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
-        os.system(f"mysql -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+        os.system(f'mariadb --skip-ssl -u root -h webcrate-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql5_service_password}\\\";\"")
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
+        os.system(f"mariadb --skip-ssl -u root -h webcrate-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
         print(f'mysql5 user {service.name} and db created')
       else:
         print(f'mysql5 user {service.name} and db already exists')

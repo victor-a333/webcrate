@@ -211,7 +211,7 @@ def backup_mysql_database(name, host, password, destination, database_type, back
   print(f'backup {database_type} db for {name}')
   print(f'=========================================')
   sys.stdout.flush()
-  dump_command = ['mysqldump', '--single-transaction', '--max_allowed_packet=64M', '-h', host, '-u', 'root', f'-p{password}', name]
+  dump_command = ['mariadb-dump', '--skip-ssl', '--single-transaction', '--max_allowed_packet=64M', '-h', host, '-u', 'root', f'-p{password}', name]
   if backup_backend == 'borg':
     store_borg_database_backup(destination, backup_uris, max_full_backups, dump_command, f'{name}.sql')
   else:

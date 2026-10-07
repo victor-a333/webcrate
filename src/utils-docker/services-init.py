@@ -56,7 +56,7 @@ async def startMysql (service):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql_database_found = int(os.popen(f'mysql -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
+    mysql_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{service.name}\';" | grep "Database ({service.name})" | wc -l').read().strip())
     if mysql_database_found == 0:
       if os.path.isfile(f'/webcrate/secrets/{service.name}-service-mysql.txt'):
         with open(f'/webcrate/secrets/{service.name}-service-mysql.txt', 'r') as f:
@@ -75,10 +75,10 @@ async def startMysql (service):
           f.close()
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/secrets/{service.name}-service-mysql.txt')
 
-      os.system(f'mysql -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
-      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
-      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      os.system(f'mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{service.name} - mysql user and db created')
     else:
       log.write(f'{service.name} - mysql user and db exists')
