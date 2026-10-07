@@ -92,11 +92,15 @@ def initialize_borg_repository(repository):
   if os.path.exists(repository):
     raise RuntimeError(f'Could not access existing Borg repository {repository}: {result.stderr.strip()}')
 
-  subprocess.run(
-    ['borg', 'init', '--encryption=none', repository],
+  init_result = subprocess.run(
+    ['borg', 'init', '--encryption=none', '--make-parent-dirs', repository],
     env=environment,
-    check=True,
+    text=True,
+    capture_output=True,
   )
+  if init_result.returncode != 0:
+    error = init_result.stderr.strip() or init_result.stdout.strip()
+    raise RuntimeError(f'Could not initialize Borg repository {repository}: {error}')
 
 def get_borg_archive_retention(full_backup_days, max_full_backups):
   return int(full_backup_days) * int(max_full_backups)
