@@ -31,7 +31,7 @@ helpers.init_openssl_root_conf()
 helpers.init_letsencrypt_conf()
 
 async def startMysql (service):
-  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql-services/{service.name}') or not os.listdir(f'/webcrate/mysql-services/{service.name}'):
     os.system(f'mkdir -p /webcrate/mysql-services/{service.name}')
@@ -75,9 +75,9 @@ async def startMysql (service):
           f.close()
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/secrets/{service.name}-service-mysql.txt')
 
-      os.system(f'mysql -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \`{service.name}\`;"')
-      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \`{service.name}\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \`{service.name}\` . * TO \`{service.name}\`@'%';\"")
+      os.system(f'mysql -u root -h webcrate-{service.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{service.name}\\`;"')
+      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{service.name}\\`@'%' IDENTIFIED BY \\\"{mysql_service_password}\\\";\"")
+      os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{service.name}\\` . * TO \\`{service.name}\\`@'%';\"")
       os.system(f"mysql -u root -h webcrate-{service.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{service.name} - mysql user and db created')
     else:

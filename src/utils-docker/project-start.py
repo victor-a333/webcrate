@@ -111,7 +111,7 @@ async def initCertificates (project):
   return nginx_reload_needed
 
 async def startMysql (project):
-  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql-projects/{project.name}') or not os.listdir(f'/webcrate/mysql-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/mysql-projects/{project.name}')
@@ -158,16 +158,16 @@ async def startMysql (project):
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql.txt')
         os.system(f'chmod a-rwx,u+rw {project.folder}/mysql.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \`{project.name}\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \`{project.name}\`@'%' IDENTIFIED BY \\\"{mysql_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \`{project.name}\` . * TO \`{project.name}\`@'%';\"")
+      os.system(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
+      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql_project_password}\\\";\"")
+      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
       os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{project.name} - mysql user and db created')
     else:
       log.write(f'{project.name} - mysql user and db exists')
 
 async def startMysql5 (project):
-  mysql5_root_password = os.popen(f'cat /webcrate/secrets/mysql5.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  mysql5_root_password = os.popen(f'cat /webcrate/secrets/mysql5.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql5-projects/{project.name}') or not os.listdir(f'/webcrate/mysql5-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/mysql5-projects/{project.name}')
@@ -214,16 +214,16 @@ async def startMysql5 (project):
       os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql5.txt')
       os.system(f'chmod a-rwx,u+rw {project.folder}/mysql5.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \`{project.name}\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \`{project.name}\`@'%' IDENTIFIED BY \\\"{mysql5_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \`{project.name}\` . * TO \`{project.name}\`@'%';\"")
+      os.system(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
+      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql5_project_password}\\\";\"")
+      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
       os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{project.name} - mysql5 user and db created')
     else:
       log.write(f'{project.name} - mysql5 user and db exists')
 
 async def startPostgresql (project):
-  postgres_root_password = os.popen(f'cat /webcrate/secrets/postgres.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  postgres_root_password = os.popen(f'cat /webcrate/secrets/postgres.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/postgresql-projects/{project.name}') or not os.listdir(f'/webcrate/postgresql-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/postgresql-projects/{project.name}')
