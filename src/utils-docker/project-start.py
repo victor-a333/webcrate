@@ -136,7 +136,7 @@ async def startMysql (project):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql_database_found = int(os.popen(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
+    mysql_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
     if mysql_database_found == 0:
       if os.path.isfile(f'/webcrate/secrets/{project.name}-project-mysql.txt'):
         with open(f'/webcrate/secrets/{project.name}-project-mysql.txt', 'r') as f:
@@ -158,10 +158,10 @@ async def startMysql (project):
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql.txt')
         os.system(f'chmod a-rwx,u+rw {project.folder}/mysql.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      os.system(f'mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql_project_password}\\\";\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{project.name} - mysql user and db created')
     else:
       log.write(f'{project.name} - mysql user and db exists')
@@ -192,7 +192,7 @@ async def startMysql5 (project):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql5_database_found = int(os.popen(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
+    mysql5_database_found = int(os.popen(f'mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
     if mysql5_database_found == 0:
       if os.path.isfile(f'/webcrate/secrets/{project.name}-project-mysql5.txt'):
         with open(f'/webcrate/secrets/{project.name}-project-mysql5.txt', 'r') as f:
@@ -214,10 +214,10 @@ async def startMysql5 (project):
       os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql5.txt')
       os.system(f'chmod a-rwx,u+rw {project.folder}/mysql5.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql5_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      os.system(f'mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \\`{project.name}\\`;"')
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \\`{project.name}\\`@'%' IDENTIFIED BY \\\"{mysql5_project_password}\\\";\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \\`{project.name}\\` . * TO \\`{project.name}\\`@'%';\"")
+      os.system(f"mariadb --skip-ssl -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
       log.write(f'{project.name} - mysql5 user and db created')
     else:
       log.write(f'{project.name} - mysql5 user and db exists')

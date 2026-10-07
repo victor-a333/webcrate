@@ -28,7 +28,7 @@ def is_nginx_up():
   return "nginx is running" in os.popen(f'docker exec webcrate-nginx service nginx status').read().strip()
 
 def is_mysql_up(host, password):
-  return int(os.popen(f'mysql -u root -h {host} -p"{password}" -e "show databases;" 2>/dev/null | grep "Database" | wc -l').read().strip())
+  return int(os.popen(f'mariadb --skip-ssl -u root -h {host} -p"{password}" -e "show databases;" 2>/dev/null | grep "Database" | wc -l').read().strip())
 
 def is_postgresql_up(host, password):
   return os.popen(f'psql -d "host={host} user=postgres password={password}" -tAc "SELECT 1 FROM pg_database LIMIT 1;" 2>/dev/null').read().strip()
