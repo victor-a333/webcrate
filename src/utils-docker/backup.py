@@ -250,9 +250,22 @@ def backup_mysql_database(name, host, password, destination, database_type, back
   print(f'backup {database_type} db for {name}')
   print(f'=========================================')
   sys.stdout.flush()
-  dump_command = ['mariadb-dump', '--skip-ssl', '--single-transaction', '--max_allowed_packet=64M', '-h', host, '-u', 'root', name]
   dump_environment = os.environ.copy()
   dump_environment['MYSQL_PWD'] = password
+  if database_type == 'mysql5':
+    # The current mariadb-dump client queries GENERATION_EXPRESSION, which is
+    # absent from the information schema of the legacy MariaDB 5 server. Use
+    # the version-matched client shipped in the database container instead.
+    dump_command = [
+      'docker', 'exec', '-e', 'MYSQL_PWD', host,
+      'mysqldump', '--single-transaction', '--max_allowed_packet=64M',
+      '-u', 'root', name,
+    ]
+  else:
+    dump_command = [
+      'mariadb-dump', '--skip-ssl', '--single-transaction',
+      '--max_allowed_packet=64M', '-h', host, '-u', 'root', name,
+    ]
   if backup_backend == 'borg':
     store_borg_database_backup(destination, backup_uris, full_backup_days, max_full_backups, dump_command, f'{name}.sql', dump_environment)
   else:
