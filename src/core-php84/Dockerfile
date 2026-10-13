@@ -71,7 +71,11 @@ RUN wget https://get.symfony.com/cli/installer -O - | bash && \
     mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
 
 #misc config
+# Keep the legacy /etc/php84/conf.d mount usable for Debian's per-SAPI config.
 RUN sed -i "s/;process_control_timeout = 0/process_control_timeout = 10s/g" /etc/php/8.4/fpm/php-fpm.conf && \
+    mkdir -p /etc/php84/conf.d && \
+    ln -s /etc/php84/conf.d/00-user.ini /etc/php/8.4/cli/conf.d/00-user.ini && \
+    ln -s /etc/php84/conf.d/00-user.ini /etc/php/8.4/fpm/conf.d/00-user.ini && \
     sed -i "s/#PubkeyAuthentication yes/PubkeyAuthentication yes/g" /etc/ssh/sshd_config && \
     sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/g" /etc/ssh/sshd_config && \
     sed -i "s/#StrictModes yes/StrictModes no/g" /etc/ssh/sshd_config && \
