@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shlex
 import sys
 import yaml
 import idna
@@ -111,12 +112,12 @@ async def initCertificates (project):
   return nginx_reload_needed
 
 async def startMysql (project):
-  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1]
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql-projects/{project.name}') or not os.listdir(f'/webcrate/mysql-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/mysql-projects/{project.name}')
     os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/mysql-projects/{project.name}')
-    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD="{mysql_root_password}"'
+    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD={shlex.quote(mysql_root_password)}'
   if helpers.is_container_exists(f'webcrate-{project.name}-mysql'):
     log.write(f'{project.name} - mysql exists')
   else:
@@ -136,8 +137,8 @@ async def startMysql (project):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql_database_found = int(os.popen(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
-    if mysql_database_found == 0:
+    mysql_database_found = helpers.mysql_database_exists(f'webcrate-{project.name}-mysql', mysql_root_password, project.name)
+    if not mysql_database_found:
       if os.path.isfile(f'/webcrate/secrets/{project.name}-project-mysql.txt'):
         with open(f'/webcrate/secrets/{project.name}-project-mysql.txt', 'r') as f:
           for line in f:
@@ -158,21 +159,18 @@ async def startMysql (project):
         os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql.txt')
         os.system(f'chmod a-rwx,u+rw {project.folder}/mysql.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql -p"{mysql_root_password}" -e "CREATE DATABASE \`{project.name}\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"CREATE USER \`{project.name}\`@'%' IDENTIFIED BY \\\"{mysql_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON \`{project.name}\` . * TO \`{project.name}\`@'%';\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql -p\"{mysql_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      helpers.create_mysql_database_and_user(f'webcrate-{project.name}-mysql', mysql_root_password, project.name, mysql_project_password)
       log.write(f'{project.name} - mysql user and db created')
     else:
       log.write(f'{project.name} - mysql user and db exists')
 
 async def startMysql5 (project):
-  mysql5_root_password = os.popen(f'cat /webcrate/secrets/mysql5.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  mysql5_root_password = os.popen(f'cat /webcrate/secrets/mysql5.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1]
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/mysql5-projects/{project.name}') or not os.listdir(f'/webcrate/mysql5-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/mysql5-projects/{project.name}')
     os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/mysql5-projects/{project.name}')
-    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD="{mysql5_root_password}"'
+    PASS_ENV = f'-e MYSQL_ROOT_PASSWORD={shlex.quote(mysql5_root_password)}'
   if helpers.is_container_exists(f'webcrate-{project.name}-mysql5'):
     log.write(f'{project.name} - mysql5 exists')
   else:
@@ -192,8 +190,8 @@ async def startMysql5 (project):
     retries -= 1
     await asyncio.sleep(2)
   if retries > 0:
-    mysql5_database_found = int(os.popen(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "show databases like \'{project.name}\';" | grep "Database ({project.name})" | wc -l').read().strip())
-    if mysql5_database_found == 0:
+    mysql5_database_found = helpers.mysql_database_exists(f'webcrate-{project.name}-mysql5', mysql5_root_password, project.name)
+    if not mysql5_database_found:
       if os.path.isfile(f'/webcrate/secrets/{project.name}-project-mysql5.txt'):
         with open(f'/webcrate/secrets/{project.name}-project-mysql5.txt', 'r') as f:
           for line in f:
@@ -214,16 +212,13 @@ async def startMysql5 (project):
       os.system(f'chown {WEBCRATE_UID}:{WEBCRATE_GID} {project.folder}/mysql5.txt')
       os.system(f'chmod a-rwx,u+rw {project.folder}/mysql5.txt')
 
-      os.system(f'mysql -u root -h webcrate-{project.name}-mysql5 -p"{mysql5_root_password}" -e "CREATE DATABASE \`{project.name}\`;"')
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"CREATE USER \`{project.name}\`@'%' IDENTIFIED BY \\\"{mysql5_project_password}\\\";\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"GRANT ALL PRIVILEGES ON \`{project.name}\` . * TO \`{project.name}\`@'%';\"")
-      os.system(f"mysql -u root -h webcrate-{project.name}-mysql5 -p\"{mysql5_root_password}\" -e \"FLUSH PRIVILEGES;\"")
+      helpers.create_mysql_database_and_user(f'webcrate-{project.name}-mysql5', mysql5_root_password, project.name, mysql5_project_password)
       log.write(f'{project.name} - mysql5 user and db created')
     else:
       log.write(f'{project.name} - mysql5 user and db exists')
 
 async def startPostgresql (project):
-  postgres_root_password = os.popen(f'cat /webcrate/secrets/postgres.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\$")
+  postgres_root_password = os.popen(f'cat /webcrate/secrets/postgres.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1].replace("$", "\\$")
   PASS_ENV = ''
   if not os.path.isdir(f'/webcrate/postgresql-projects/{project.name}') or not os.listdir(f'/webcrate/postgresql-projects/{project.name}'):
     os.system(f'mkdir -p /webcrate/postgresql-projects/{project.name}')

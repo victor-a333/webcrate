@@ -1,20 +1,23 @@
-FROM alpine:3.17
-RUN apk update &&\
-    apk add \
-    docker \
+FROM alpine:3.24
+ENV BORG_RSH=/borg-ssh.sh \
+    BORG_REMOTE_PATH=borg-1.4
+RUN apk add --no-cache \
+    docker-cli \
     cronie \
     certbot \
+    borgbackup \
     duplicity \
     lftp \
     pwgen \
     openssl \
+    openssh-client \
     mariadb-client \
     python3 py3-yaml py3-idna py3-munch \
-    postgresql-client &&\
-    rm -rf /var/cache/apk/*
+    postgresql-client
 RUN mkdir /webcrate
 COPY [ \
     "entrypoint.sh", \
+    "borg-ssh.sh", \
     "pwgen.sh", \
     "gzip.conf", \
     "redirect-ssl.conf", \
@@ -43,6 +46,7 @@ COPY [ \
     "/webcrate" \
 ]
 RUN chmod u+x /*.py &&\
+    chmod u+x /borg-ssh.sh &&\
     chmod u+x /pwgen.sh &&\
     chmod u+x /entrypoint.sh
 RUN echo '0 6 * * 1 root . /docker.env; /certbot-renew.py' > /etc/cron.d/certbot-renew && \

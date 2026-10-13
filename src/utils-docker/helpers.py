@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import subprocess
 import yaml
 from munch import munchify
 from log import log
@@ -27,8 +28,37 @@ def load_domains(name):
 def is_nginx_up():
   return "nginx is running" in os.popen(f'docker exec webcrate-nginx service nginx status').read().strip()
 
+def mysql_query(host, password, query, check=False):
+  env = os.environ.copy()
+  env['MYSQL_PWD'] = password
+  return subprocess.run(
+    ['mariadb', '--skip-ssl', '-u', 'root', '-h', host, '-e', query],
+    env=env,
+    text=True,
+    capture_output=True,
+    check=check
+  )
+
 def is_mysql_up(host, password):
-  return int(os.popen(f'mysql -u root -h {host} -p"{password}" -e "show databases;" 2>/dev/null | grep "Database" | wc -l').read().strip())
+  return mysql_query(host, password, 'SELECT 1;').returncode == 0
+
+def mysql_database_exists(host, password, database):
+  result = mysql_query(host, password, 'SHOW DATABASES;', check=True)
+  return database in result.stdout.splitlines()[1:]
+
+def mysql_identifier(value):
+  return f'`{value.replace("`", "``")}`'
+
+def mysql_string(value):
+  return "'" + value.replace('\\', '\\\\').replace("'", "''") + "'"
+
+def create_mysql_database_and_user(host, root_password, name, user_password):
+  identifier = mysql_identifier(name)
+  password = mysql_string(user_password)
+  mysql_query(host, root_password, f'CREATE DATABASE {identifier};', check=True)
+  mysql_query(host, root_password, f"CREATE USER {identifier}@'%' IDENTIFIED BY {password};", check=True)
+  mysql_query(host, root_password, f"GRANT ALL PRIVILEGES ON {identifier}.* TO {identifier}@'%';", check=True)
+  mysql_query(host, root_password, 'FLUSH PRIVILEGES;', check=True)
 
 def is_postgresql_up(host, password):
   return os.popen(f'psql -d "host={host} user=postgres password={password}" -tAc "SELECT 1 FROM pg_database LIMIT 1;" 2>/dev/null').read().strip()
