@@ -31,6 +31,19 @@ RUN curl -sSLo /tmp/debsuryorg-archive-keyring.deb https://packages.sury.org/deb
         php-pear php8.4-dev php8.4-imagick imagemagick && \
     rm -rf /var/lib/apt/lists/*
 
+# Debian's ImageMagick policy limits each image dimension to 16KP on Bookworm.
+# Keep the override compatible with both ImageMagick 6 and 7 policy locations.
+ARG IMAGEMAGICK_WIDTH_LIMIT=32KP
+ARG IMAGEMAGICK_HEIGHT_LIMIT=32KP
+RUN policy_file="$(find /etc/ImageMagick-* -maxdepth 1 -name policy.xml -print -quit)" && \
+    test -n "$policy_file" && \
+    sed -i -E \
+        -e "/domain=\"resource\"/ s/name=\"width\" value=\"[^\"]+\"/name=\"width\" value=\"${IMAGEMAGICK_WIDTH_LIMIT}\"/" \
+        -e "/domain=\"resource\"/ s/name=\"height\" value=\"[^\"]+\"/name=\"height\" value=\"${IMAGEMAGICK_HEIGHT_LIMIT}\"/" \
+        "$policy_file" && \
+    identify -list resource | grep -Eq "Width:[[:space:]]+${IMAGEMAGICK_WIDTH_LIMIT}" && \
+    identify -list resource | grep -Eq "Height:[[:space:]]+${IMAGEMAGICK_HEIGHT_LIMIT}"
+
 #install PIE and timezonedb
 RUN curl -fsSL -o /usr/local/bin/pie https://github.com/php/pie/releases/latest/download/pie.phar && \
     chmod u+x /usr/local/bin/pie && \
