@@ -53,6 +53,7 @@ fi
 writeLog "Init services"
 docker run --rm --env-file=$(pwd)/.env \
   --name webcrate-utils-docker-services-init \
+  --network="webcrate_network" \
   -e WEBCRATE_UID=$uid \
   -e WEBCRATE_GID=$gid \
   -e WEBCRATE_SERVICE_STATS=$WEBCRATE_SERVICE_STATS \
@@ -60,7 +61,7 @@ docker run --rm --env-file=$(pwd)/.env \
   -e WEBCRATE_SERVICE_DOCTOHTML=$WEBCRATE_SERVICE_DOCTOHTML \
   -e WEBCRATE_SERVICE_HTMLTOPDF=$WEBCRATE_SERVICE_HTMLTOPDF \
   -e WEBCRATE_SERVICE_DOCXTOPDF=$WEBCRATE_SERVICE_DOCXTOPDF \
-  -e WEBCRATE_SERVICE_DOCXTOPDF=$WEBCRATE_SERVICE_PDFFOOTER \
+  -e WEBCRATE_SERVICE_PDFFOOTER=$WEBCRATE_SERVICE_PDFFOOTER \
   -e WEBCRATE_PWD=$(pwd) \
   -v $DOCKER_SOCKET:/var/run/docker.sock \
   -v $(pwd):/webcrate-readonly:ro \
@@ -75,7 +76,11 @@ docker run --rm --env-file=$(pwd)/.env \
   -v $(pwd)/var/letsencrypt-meta:/webcrate/letsencrypt-meta \
   -v $(pwd)/var/crontabs:/webcrate/crontabs \
   -v $(pwd)/var/php_pools:/webcrate/php_pools \
-  ace5040/webcrate-utils-docker:stable /services-init.py
+  -v $(pwd)/var/nginx:/webcrate/nginx \
+  ace5040/webcrate-utils-docker:stable /services-init.py || {
+    writeLog "Service initialization failed"
+    return 1
+  }
 writeLog "Services inited"
 
 if docker container inspect webcrate-mysql >/dev/null 2> /dev/null; then

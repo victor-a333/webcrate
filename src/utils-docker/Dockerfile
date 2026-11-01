@@ -27,11 +27,15 @@ COPY [ \
     "parse-projects.py", \
     "project-config.py", \
     "project-start.py", \
+    "project-certs.py", \
     "parse-redirects.py", \
     "redirect-config.py", \
     "redirect-start.py", \
     "parse-services.py", \
     "services-init.py", \
+    "certificates.py", \
+    "nginx_tls.py", \
+    "service_settings.py", \
     "log.py", \
     "backup.py", \
     "certbot-renew-deploy.py", \
@@ -45,11 +49,12 @@ COPY [ \
     "ssl.conf", \
     "/webcrate" \
 ]
-RUN chmod u+x /*.py &&\
+RUN sed -i 's/\r$//' /*.py /entrypoint.sh /borg-ssh.sh /pwgen.sh &&\
+    chmod u+x /*.py &&\
     chmod u+x /borg-ssh.sh &&\
     chmod u+x /pwgen.sh &&\
     chmod u+x /entrypoint.sh
-RUN echo '0 6 * * 1 root . /docker.env; /certbot-renew.py' > /etc/cron.d/certbot-renew && \
+RUN echo '0 */12 * * * root . /docker.env; /certbot-renew.py' > /etc/cron.d/certbot-renew && \
     echo '0 3 * * * root . /docker.env; /backup.py' > /etc/cron.d/backup
 
 CMD ["/entrypoint.sh"]

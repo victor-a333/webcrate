@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import nginx_tls
 import sys
 import yaml
 from munch import munchify
@@ -244,29 +245,7 @@ for projectname,project in projects.items():
             f.close()
           print(f'gzip config for {project.name} - generated')
 
-        if project.https == 'letsencrypt':
-          if os.path.exists(f'/webcrate/letsencrypt/live/{project.name}/privkey.pem') and os.path.exists(f'/webcrate/letsencrypt/live/{project.name}/fullchain.pem'):
-            with open(f'/webcrate/ssl.conf', 'r') as f:
-              conf = f.read()
-              f.close()
-            conf = conf.replace('%type%', 'letsencrypt')
-            conf = conf.replace('%path%', f'live/{project.name}')
-            with open(f'/webcrate/nginx/ssl/{project.name}.conf', 'w') as f:
-              f.write(conf)
-              f.close()
-            print(f'ssl config for {project.name} - generated')
-
-        if project.https == 'openssl':
-          if os.path.isdir(f'/webcrate/openssl/{project.name}'):
-            with open(f'/webcrate/ssl.conf', 'r') as f:
-              conf = f.read()
-              f.close()
-            conf = conf.replace('%type%', 'openssl')
-            conf = conf.replace('%path%', f'{project.name}')
-            with open(f'/webcrate/nginx/ssl/{project.name}.conf', 'w') as f:
-              f.write(conf)
-              f.close()
-            print(f'ssl config for {project.name} - generated')
+        nginx_tls.configure(project.name, project.https, 'ssl.conf')
 
         with open(f'/webcrate/dnsmasq/hosts/{project.name}.hosts', 'w') as f:
           f.write(f'{DOCKER_HOST_IP} {" ".join(project.domains)}\n')

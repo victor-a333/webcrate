@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import nginx_tls
 import sys
 import yaml
 from munch import munchify
@@ -29,29 +30,7 @@ for redirectname,redirect in redirects.items():
     dump = json.dumps(redirect, separators=(',', ':'), ensure_ascii=True)
     redirect.name = f'redirect-{redirectname}'
     if redirect.active:
-      if redirect.https == 'letsencrypt':
-        if os.path.isdir(f'/webcrate/letsencrypt/live/{redirect.name}'):
-          with open(f'/webcrate/redirect-ssl.conf', 'r') as f:
-            conf = f.read()
-            f.close()
-          conf = conf.replace('%type%', 'letsencrypt')
-          conf = conf.replace('%path%', f'live/{redirect.name}')
-          with open(f'/webcrate/nginx/ssl/{redirect.name}.conf', 'w') as f:
-            f.write(conf)
-            f.close()
-          print(f'ssl config for {redirect.name} - generated')
-
-      if redirect.https == 'openssl':
-        if os.path.isdir(f'/webcrate/openssl/{redirect.name}'):
-          with open(f'/webcrate/redirect-ssl.conf', 'r') as f:
-            conf = f.read()
-            f.close()
-          conf = conf.replace('%type%', 'openssl')
-          conf = conf.replace('%path%', f'{redirect.name}')
-          with open(f'/webcrate/nginx/ssl/{redirect.name}.conf', 'w') as f:
-            f.write(conf)
-            f.close()
-          print(f'ssl config for {redirect.name} - generated')
+      nginx_tls.configure(redirect.name, redirect.https, 'redirect-ssl.conf')
 
       conf = ''
       if os.path.isfile(f'/webcrate/nginx-templates/default-redirect.conf'):

@@ -6,6 +6,8 @@ import sys
 import yaml
 import helpers
 import asyncio
+import certificates
+import service_settings
 from munch import munchify
 from log import log
 
@@ -104,12 +106,20 @@ for servicename,service in services.items():
   #   log.write(f'{service.name} - network created')
 
   # START DATABASES
-  os.system(f'docker network connect webcrate_network webcrate-utils-docker-services-init')
   asyncio.run(startDatabases(service))
-  os.system(f'docker network disconnect webcrate_network webcrate-utils-docker-services-init')
 
-  if not helpers.is_network_has_connection(f'webcrate_network', 'webcrate-nginx'):
-    os.system(f'docker network connect webcrate_network webcrate-nginx')
+
+# Install certificates only for services whose proxy configuration is generated.
+certificate_failures = []
+for servicename, service in services.items():
+  if service_settings.enabled(servicename):
+    service.name = servicename
+    try:
+      certificates.initialize(service)
+    except Exception as error:
+      log.write(f'{servicename} - certificate initialization failed: {error}')
+      print(f'{servicename} - certificate initialization failed: {error}', file=sys.stderr)
+      certificate_failures.append(servicename)
 
 dbHosts = 'webcrate-mysql'
 for servicename,service in services.items():
@@ -131,3 +141,5 @@ with open(f'/webcrate/meta/dbhosts.txt', 'w') as f:
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/meta')
 
 sys.stdout.flush()
+if certificate_failures:
+  sys.exit(1)
