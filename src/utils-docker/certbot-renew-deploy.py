@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-
+"""Make renewed keys readable before validating and reloading Nginx."""
 import os
-from log import log
+import subprocess
+import nginx_tls
 
-log = log('/webcrate/log/app.log')
-
-log.write(f'Deploy new certificates')
-
-print(f'reload nginx config after certificates renewal')
-#os.system(f'docker exec webcrate-nginx nginx -s reload')
-os.system(f'( sleep 5 && docker exec webcrate-nginx nginx -s reload ) &')
-
+owner = f"{os.environ.get('WEBCRATE_UID', '1000')}:{os.environ.get('WEBCRATE_GID', '1000')}"
+subprocess.run(['chown', '-R', owner, '/webcrate/letsencrypt'], check=True)
+nginx_tls.reload_nginx()

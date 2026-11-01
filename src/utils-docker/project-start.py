@@ -6,8 +6,8 @@ import sys
 import yaml
 import idna
 import helpers
+import certificates
 import asyncio
-import subprocess
 from munch import munchify
 from log import log
 
@@ -33,83 +33,9 @@ PROJECT_NAME = sys.argv[1]
 IS_RELOAD = len(sys.argv) > 2 and sys.argv[2] == 'reload'
 volumes = WEBCRATE_PROJECTS_FOLDERS.split(':')
 
-def reload_nginx(project_name, reason):
-  reload_cmd = 'docker exec webcrate-nginx nginx -t && docker exec webcrate-nginx nginx -s reload'
-  reload_result = os.system(f'{reload_cmd} >/dev/null 2>&1')
-  log.write(f'{project_name} - nginx reload before {reason}: exit_code={reload_result}')
-  return reload_result == 0
-
 async def initCertificates (project):
-  nginx_reload_needed = False
-  if project.https == 'letsencrypt':
-    domains = ",".join(list(filter(lambda domain: domain.split('.')[-1] != 'test', project.domains)))
-    domains_prev = helpers.load_domains(project.name)
-    cert_dir = f'/webcrate/letsencrypt/live/{project.name}'
-    has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
-    log.write(f'{project.name} - letsencrypt: domains={domains}, domains_prev={domains_prev}, has_valid_cert={has_valid_cert}')
-    if len(domains) and (domains != domains_prev or not has_valid_cert):
-      retries = 30
-      while retries > 0 and not helpers.is_nginx_up():
-        retries -= 1
-        await asyncio.sleep(2)
-      log.write(f'{project.name} - nginx_up_retries_remaining={retries}')
-      if retries > 0:
-        path = f'/webcrate/letsencrypt-meta/well-known/{project.name}'
-        if not os.path.isdir(path):
-          os.system(f'mkdir -p {path}')
-        reload_nginx(project.name, 'letsencrypt challenge')
-        certbot_cmd = f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {project.name} --expand --webroot --webroot-path {path} -d {domains}'
-        certbot_result = subprocess.run(certbot_cmd, shell=True, capture_output=True, text=True)
-        certbot_output = f'{certbot_result.stdout}{certbot_result.stderr}'
-        log.write(f'{project.name} - certbot output: {certbot_output}')
-        
-        os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/letsencrypt')
-        os.system(f'rm -rf {path}')
-        if certbot_result.returncode == 0:
-          with open(f'/webcrate/letsencrypt-meta/domains-{project.name}.txt', 'w') as f:
-            f.write(domains)
-            f.close()
-          print(f'{project.name} - letsencrypt certificate generated')
-          nginx_reload_needed = True
-        else:
-          print(f'{project.name} - letsencrypt certificate failed')
+  return certificates.initialize(project)
 
-  if project.https == 'openssl':
-    conf = helpers.genereate_openssl_conf(project.name, project.domains)
-    conf_old = helpers.load_openssl_conf(project.name)
-    if conf_old != conf or not os.path.exists(f'/webcrate/openssl/{project.name}/privkey.pem') or not os.path.exists(f'/webcrate/openssl/{project.name}/fullchain.pem'):
-      os.system(f'mkdir -p /webcrate/openssl/{project.name}')
-      if os.listdir(f'/webcrate/openssl/{project.name}'):
-        os.system(f'rm /webcrate/openssl/{project.name}/*')
-      with open(f'/webcrate/openssl/{project.name}/openssl.cnf', 'w') as f:
-        f.write(conf)
-        f.close()
-      os.system(f'openssl genrsa -out /webcrate/openssl/{project.name}/privkey.pem 2048')
-      os.system(f'openssl req -new -sha256 -key /webcrate/openssl/{project.name}/privkey.pem -out /webcrate/openssl/{project.name}/fullchain.csr -config /webcrate/openssl/{project.name}/openssl.cnf')
-      os.system(f'openssl x509 -req -extensions SAN -extfile /webcrate/openssl/{project.name}/openssl.cnf -in /webcrate/openssl/{project.name}/fullchain.csr -CA /webcrate/secrets/rootCA.crt -CAkey /webcrate/secrets/rootCA.key -CAcreateserial -out /webcrate/openssl/{project.name}/fullchain.pem -days 5000 -sha256')
-      os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/openssl/{project.name}')
-      nginx_reload_needed = True
-      print(f'{project.name} - openssl certificate generated')
-
-  if project.https == 'openssl' or project.https == 'letsencrypt':
-    if not os.path.exists(f'/webcrate/nginx/ssl/{project.name}.conf'):
-      if (os.path.exists(f'/webcrate/openssl/{project.name}/privkey.pem') and os.path.exists(f'/webcrate/openssl/{project.name}/fullchain.pem')) or (os.path.isdir(f'/webcrate/letsencrypt/live/{project.name}') and os.listdir(f'/webcrate/letsencrypt/live/{project.name}')):
-        with open(f'/webcrate/ssl.conf', 'r') as f:
-          conf = f.read()
-          f.close()
-        conf = conf.replace('%type%', project.https)
-        conf = conf.replace('%path%', f'{"live/" if project.https == "letsencrypt" else ""}{project.name}')
-        with open(f'/webcrate/nginx/ssl/{project.name}.conf', 'w') as f:
-          f.write(conf)
-          f.close()
-        print(f'{project.name} - ssl.conf generated')
-        nginx_reload_needed = True
-
-  if project.https == 'disabled' and os.path.exists(f'/webcrate/nginx/ssl/{project.name}.conf'):
-    nginx_reload_needed = True
-    os.system(f'rm /webcrate/nginx/ssl/{project.name}.conf')
-    print(f'{project.name} - ssl.conf removed')
-  return nginx_reload_needed
 
 async def startMysql (project):
   mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1]

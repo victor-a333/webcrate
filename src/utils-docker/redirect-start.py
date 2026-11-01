@@ -5,6 +5,7 @@ import sys
 import yaml
 import idna
 import helpers
+import certificates
 import asyncio
 from munch import munchify
 from log import log
@@ -21,78 +22,8 @@ WEBCRATE_PWD = os.environ.get('WEBCRATE_PWD', '')
 REDIRECT_NAME = sys.argv[1]
 
 async def initCertificates (redirect):
-  nginx_reload_needed = False
-  if redirect.https == 'letsencrypt':
-    domains = ",".join(list(filter(lambda domain: domain.split('.')[-1] != 'test', redirect.domains)))
-    domains_prev = helpers.load_domains(redirect.name)
-    cert_dir = f'/webcrate/letsencrypt/live/{redirect.name}'
-    has_valid_cert = os.path.isdir(cert_dir) and len(os.listdir(cert_dir)) > 0
-    log.write(f'{redirect.name} - letsencrypt: domains={domains}, domains_prev={domains_prev}, has_valid_cert={has_valid_cert}')
-    if len(domains) and (domains != domains_prev or not has_valid_cert):
-      retries = 30
-      while retries > 0 and not helpers.is_nginx_up():
-        retries -= 1
-        await asyncio.sleep(2)
-      log.write(f'{redirect.name} - nginx_up_retries_remaining={retries}')
-      if retries > 0:
-        with open(f'/webcrate/letsencrypt-meta/domains-{redirect.name}.txt', 'w') as f:
-          f.write(domains)
-          f.close()
-        path = f'/webcrate/letsencrypt-meta/well-known/{redirect.name}'
-        if not os.path.isdir(path):
-          os.system(f'mkdir -p {path}')
-        certbot_cmd = f'certbot certonly --key-type ecdsa --keep-until-expiring --renew-with-new-domains --allow-subset-of-names --config-dir /webcrate/letsencrypt --cert-name {redirect.name} --expand --webroot --webroot-path {path} -d {domains}'
-        certbot_output = os.popen(certbot_cmd).read()
-        log.write(f'{redirect.name} - certbot output: {certbot_output}')
-        os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/letsencrypt')
-        os.system(f'rm -rf {path}')
-        print(f'{redirect.name} - letsencrypt certificate generated')
-        nginx_reload_needed = True
+  return certificates.initialize(redirect, template='redirect-ssl.conf')
 
-  if redirect.https == 'openssl':
-    conf = helpers.genereate_openssl_conf(redirect.name, redirect.domains)
-    conf_old = helpers.load_openssl_conf(redirect.name)
-    if conf_old != conf or not os.path.exists(f'/webcrate/openssl/{redirect.name}/privkey.pem') or not os.path.exists(f'/webcrate/openssl/{redirect.name}/fullchain.pem'):
-      os.system(f'mkdir -p /webcrate/openssl/{redirect.name}')
-      if os.listdir(f'/webcrate/openssl/{redirect.name}'):
-        os.system(f'rm /webcrate/openssl/{redirect.name}/*')
-      with open(f'/webcrate/openssl/{redirect.name}/openssl.cnf', 'w') as f:
-        f.write(conf)
-        f.close()
-      os.system(f'openssl genrsa -out /webcrate/openssl/{redirect.name}/privkey.pem 2048')
-      os.system(f'openssl req -new -sha256 -key /webcrate/openssl/{redirect.name}/privkey.pem -out /webcrate/openssl/{redirect.name}/fullchain.csr -config /webcrate/openssl/{redirect.name}/openssl.cnf')
-      os.system(f'openssl x509 -req -extensions SAN -extfile /webcrate/openssl/{redirect.name}/openssl.cnf -in /webcrate/openssl/{redirect.name}/fullchain.csr -CA /webcrate/secrets/rootCA.crt -CAkey /webcrate/secrets/rootCA.key -CAcreateserial -out /webcrate/openssl/{redirect.name}/fullchain.pem -days 5000 -sha256')
-      os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/openssl/{redirect.name}')
-      nginx_reload_needed = True
-      print(f'{redirect.name} - openssl certificate generated')
-
-  if redirect.https == 'openssl' or redirect.https == 'letsencrypt':
-    if not os.path.exists(f'/webcrate/nginx/ssl/{redirect.name}.conf'):
-      if (
-          os.path.exists(f'/webcrate/openssl/{redirect.name}/privkey.pem')
-          and
-          os.path.exists(f'/webcrate/openssl/{redirect.name}/fullchain.pem')
-        ) or (
-          os.path.isdir(f'/webcrate/letsencrypt/live/{redirect.name}')
-          and
-          os.listdir(f'/webcrate/letsencrypt/live/{redirect.name}')
-        ):
-        with open(f'/webcrate/ssl.conf', 'r') as f:
-          conf = f.read()
-          f.close()
-        conf = conf.replace('%type%', redirect.https)
-        conf = conf.replace('%path%', f'{"live/" if redirect.https == "letsencrypt" else ""}{redirect.name}')
-        with open(f'/webcrate/nginx/ssl/{redirect.name}.conf', 'w') as f:
-          f.write(conf)
-          f.close()
-        print(f'{redirect.name} - ssl.conf generated')
-        nginx_reload_needed = True
-
-  if redirect.https == 'disabled' and os.path.exists(f'/webcrate/nginx/ssl/{redirect.name}.conf'):
-    nginx_reload_needed = True
-    os.system(f'rm /webcrate/nginx/ssl/{redirect.name}.conf')
-    print(f'{redirect.name} - ssl.conf removed')
-  return nginx_reload_needed
 
 async def asyncOps (redirect):
   initCertificatesTask = asyncio.create_task(initCertificates(redirect))
@@ -103,10 +34,6 @@ for redirectname,redirect in redirects.items():
   if REDIRECT_NAME == redirectname and redirect.active:
     redirect.name = f'redirect-{redirectname}'
     nginx_reload_needed = asyncio.run(asyncOps(redirect))
-    if nginx_reload_needed:
-      os.system(f'docker exec webcrate-nginx nginx -s reload')
-      log.write(f'{redirect.name} - changes detected - nginx config reloaded')
-
     log.write(f'{redirect.name} - started')
 
 sys.stdout.flush()
