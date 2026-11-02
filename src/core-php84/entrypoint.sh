@@ -21,5 +21,9 @@ sed -i '1s/^/export USER=${USER:-$(id -u -n)}\n/' /etc/bash.bashrc
 echo LANG=C.utf8 >> /etc/default/locale
 echo LANGUAGE=C.utf8 >> /etc/default/locale
 echo LC_ALL=C.utf8 >> /etc/default/locale
-/webcrate/parse-projects.py
+/webcrate/parse-projects.py || exit 1
+if ! id "$WEBCRATE_PROJECT" >/dev/null 2>&1; then
+  echo "Project user '$WEBCRATE_PROJECT' was not created; check /webcrate/projects.yml and user setup." >&2
+  exit 1
+fi
 /usr/bin/supervisord -c /etc/supervisord.conf

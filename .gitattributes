@@ -1,2 +1,2 @@
-src/core-php84/*.sh text eol=lf
+# Keep text files usable by Linux shells and containers on every host OS.
 * text=auto eol=lf

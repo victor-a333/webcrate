@@ -110,7 +110,8 @@ WORKDIR /
 COPY ["versions.py", "parse-projects.py", "sync_ssh_keys.sh", "install-applications.sh", "log.py", "supervisord.conf.template", "supervisord-user.conf.template", "/webcrate/"]
 COPY bashrc.sh /etc/bashrc.sh
 COPY ["entrypoint.sh", "/"]
-RUN chmod u+x /webcrate/sync_ssh_keys.sh && \
+RUN sed -i 's/\r$//' /webcrate/*.py /webcrate/*.sh /webcrate/*.template /etc/bashrc.sh /entrypoint.sh && \
+    chmod u+x /webcrate/sync_ssh_keys.sh && \
     chmod u+x /webcrate/install-applications.sh && \
     chmod u+x /webcrate/parse-projects.py && \
     chmod u+x /webcrate/versions.py && \

@@ -31,4 +31,4 @@ for projectname,project in projects.items():
     os.system(f'usermod -p {password} {project.name} > /dev/null 2>&1')
     os.system(f'mkdir -p /run/sshd > /dev/null 2>&1')
     os.system(f'chown root:root /run/sshd > /dev/null 2>&1')
-    log.write(f'{project.name} - created', log.LEVEL.debug)
+    log.write(f'{project.name} - created')
