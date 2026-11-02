@@ -21,3 +21,10 @@ Certificate creation and scheduled renewal share `certificates.py`. Nginx TLS
 rendering and deployment share `nginx_tls.py`. Existing certificate names and
 paths are preserved. Renewal runs every twelve hours. Existing saved ACME
 lineages are renewed regardless of which YAML file originally defined them.
+
+`./bin/webcrate start --services-only` generates service configuration and runs
+service initialization/startup, skipping project and redirect configuration
+and startup scripts. Existing project/redirect configuration is retained.
+Shared initialization, Nginx, databases, utilities, and certificate storage
+remain shared; service TLS changes may reload the Nginx serving existing sites.
+This flag does not recreate existing service containers or apply to `restart`.
