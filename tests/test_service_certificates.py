@@ -140,5 +140,40 @@ class CertificateLifecycleTest(unittest.TestCase):
         self.assertEqual((self.root / 'nginx/ssl/redirect-demo.conf').read_text(), 'redirect TLS letsencrypt/live/redirect-demo')
 
 
+class StartupCertificateFailureTest(unittest.TestCase):
+    def test_account_registration_failure_is_logged_and_nonfatal(self):
+        logger = Mock()
+        error = subprocess.CalledProcessError(1, ['certbot', 'register'])
+        with patch.object(certs, 'init_openssl_root_conf'), patch.object(certs, 'initialize_account', side_effect=error), patch('sys.stderr'):
+            certs.prepare_startup(logger)
+        self.assertIn('ACME account', logger.write.call_args.args[0])
+        self.assertIn('continuing startup', logger.write.call_args.args[0])
+
+    def test_leaf_failure_is_logged_and_nonfatal(self):
+        logger = Mock()
+        target = SimpleNamespace(name='admin')
+        with patch.object(certs, 'initialize', side_effect=RuntimeError('issuance failed')), patch('sys.stderr'):
+            self.assertFalse(certs.initialize_for_startup(target, logger))
+        self.assertIn('admin', logger.write.call_args.args[0])
+
+    def test_services_initialization_continues_after_certificate_failures(self):
+        import builtins
+        import runpy
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'services.yml').write_text('admin:\n  mysql_db: false\n')
+            (root / 'projects.yml').write_text('{}')
+            logger = Mock()
+            real_open = builtins.open
+            def fixture_open(path, *args, **kwargs):
+                if str(path).startswith('/webcrate/'):
+                    path = root / Path(path).name
+                return real_open(path, *args, **kwargs)
+            with patch.dict(sys.modules, {'helpers': Mock(), 'log': SimpleNamespace(log=Mock(return_value=logger)), 'munch': SimpleNamespace(munchify=lambda mapping: {name: SimpleNamespace(**target) for name, target in mapping.items()})}), patch('builtins.open', side_effect=fixture_open), patch.object(certs, 'init_openssl_root_conf'), patch.object(certs, 'initialize_account', side_effect=RuntimeError('invalid email')), patch.object(certs, 'initialize', side_effect=RuntimeError('issuance failed')), patch('os.system', return_value=0), patch('sys.stderr'):
+                runpy.run_path(str(Path(__file__).parents[1] / 'src/utils-docker/services-init.py'), run_name='__main__')
+            self.assertEqual((root / 'dbhosts.txt').read_text(), 'webcrate-mysql')
+            self.assertEqual(logger.write.call_count, 2)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,11 +1,36 @@
 """Shared certificate lifecycle for services, projects, and redirects."""
 
 import os
+import sys
 from pathlib import Path
 import subprocess
 import fcntl
 from contextlib import contextmanager
 import nginx_tls
+
+
+def log_startup_failure(logger, name, error):
+    message = f'{name} - certificate initialization failed; continuing startup: {error}'
+    logger.write(message)
+    print(message, file=sys.stderr)
+
+
+def prepare_startup(logger):
+    """Certificate prerequisites must not prevent application startup."""
+    for name, initialize in (('local CA', init_openssl_root_conf),
+                             ('ACME account', initialize_account)):
+        try:
+            initialize()
+        except Exception as error:
+            log_startup_failure(logger, name, error)
+
+
+def initialize_for_startup(target, logger, template='ssl.conf'):
+    try:
+        return initialize(target, template=template)
+    except Exception as error:
+        log_startup_failure(logger, target.name, error)
+        return False
 
 
 @contextmanager

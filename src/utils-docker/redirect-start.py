@@ -22,7 +22,7 @@ WEBCRATE_PWD = os.environ.get('WEBCRATE_PWD', '')
 REDIRECT_NAME = sys.argv[1]
 
 async def initCertificates (redirect):
-  return certificates.initialize(redirect, template='redirect-ssl.conf')
+  return certificates.initialize_for_startup(redirect, log, template='redirect-ssl.conf')
 
 
 async def asyncOps (redirect):

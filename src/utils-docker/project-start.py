@@ -34,7 +34,7 @@ IS_RELOAD = len(sys.argv) > 2 and sys.argv[2] == 'reload'
 volumes = WEBCRATE_PROJECTS_FOLDERS.split(':')
 
 async def initCertificates (project):
-  return certificates.initialize(project)
+  return certificates.initialize_for_startup(project, log)
 
 
 async def startMysql (project):
