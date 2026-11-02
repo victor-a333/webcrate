@@ -1,99 +1,69 @@
 # Build frontend assets separately so Node.js and node_modules stay out of runtime.
-FROM archlinux:latest AS frontend
-RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S npm && \
-    pacman --noconfirm -Scc
+FROM node:22-trixie-slim AS frontend
 WORKDIR /app/assets/admin
 COPY app/assets/admin/package*.json ./
 RUN npm install --verbose
 COPY app/assets/admin/ ./
 RUN NODE_OPTIONS=--openssl-legacy-provider npm run build
 
-# Arch bundles the Docker client and engine; retain only the client at runtime.
-FROM archlinux:latest AS docker-cli
-RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S docker
+# Only the client binary is needed to control the host's Docker daemon.
+FROM docker:29-cli AS docker-cli
 
-FROM archlinux:latest
+FROM debian:trixie-slim
 
-#update pacman db
-RUN pacman --needed --noconfirm -Syu && \
-    pacman --needed --noconfirm -S binutils git composer nano openssh unzip mariadb-clients iputils inetutils which python-yaml python-munch python-setuptools nginx \
-    php php-fpm php-intl php-sqlite php-gd php-xsl php-tidy php-imagick php-memcached php-igbinary debugedit && \
-    pacman -U --noconfirm https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst && \
-    pacman --noconfirm -Scc
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates tzdata composer git nano openssh-client unzip mariadb-client \
+        iputils-ping inetutils-telnet debianutils python3 python3-yaml python3-munch \
+        nginx supervisor sudo \
+        php8.4-cli php8.4-fpm php8.4-curl php8.4-mbstring php8.4-xml \
+        php8.4-intl php8.4-sqlite3 php8.4-mysql php8.4-gd php8.4-tidy \
+        php8.4-imagick php8.4-memcached php8.4-igbinary php8.4-soap php8.4-zip && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd -m -U -s /bin/bash app && \
+    rm /etc/php/8.4/fpm/pool.d/www.conf && \
+    mkdir -p /run/php /webcrate && \
+    chown app:app /webcrate
 
-COPY --from=docker-cli /usr/bin/docker /usr/bin/docker
-# Verify that the copied client runs with the runtime libraries.
-RUN docker --version
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+RUN docker --version && composer --version
 
-#make automake bison binutils autoconf gcc patch
-RUN pacman --needed --noconfirm -S sudo && pacman --noconfirm -Scc
-RUN useradd -m -s /bin/bash dev
-RUN useradd -m -s /bin/bash app
-RUN usermod -p "dev" dev
-RUN usermod -u 555 dev
-RUN groupmod -g 555 dev
-RUN echo 'dev ALL=(ALL) NOPASSWD: ALL' | EDITOR='tee -a' visudo
-RUN sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j12\"/g" /etc/makepkg.conf
+COPY pool.conf /etc/php/8.4/fpm/pool.d/pool.conf
+COPY php.ini /etc/php/8.4/mods-available/webcrate.ini
+RUN phpenmod webcrate && \
+    printf '%s\n' \
+        'app ALL=(ALL) NOPASSWD: /webcrate/versions.py' \
+        'app ALL=(ALL) NOPASSWD: /webcrate/updateprojects.py' \
+        'app ALL=(ALL) NOPASSWD: /webcrate/updateredirects.py' \
+        'app ALL=(ALL) NOPASSWD: /webcrate/reload-redirect.py' \
+        'app ALL=(ALL) NOPASSWD: /webcrate/reload.py' \
+        > /etc/sudoers.d/webcrate && \
+    chmod 0440 /etc/sudoers.d/webcrate && \
+    visudo -cf /etc/sudoers.d/webcrate
 
-USER dev
-WORKDIR /home/dev
-
-#install symfony-cli-bin
-RUN git clone https://aur.archlinux.org/symfony-cli-bin.git && \
-    cd symfony-cli-bin && \
-    makepkg -scir --nocheck --noconfirm --skipchecksums && \
-    rm -rf /home/dev/symfony-cli-bin && \
-    sudo pacman --noconfirm -Scc
-
-#install docker-systemctl-replacement-git
-RUN git clone https://aur.archlinux.org/docker-systemctl-replacement-git.git && \
-    cd docker-systemctl-replacement-git && \
-    makepkg -scir --nocheck --noconfirm --skipchecksums && \
-    rm -rf /home/dev/docker-systemctl-replacement-git && \
-    sudo pacman --noconfirm -Scc
-
-USER root
-
-RUN chown root:root /bin/systemctl.py && \
-    chmod a+x /bin/systemctl.py && \
-    mv /bin/systemctl /bin/systemctl_original && \
-    cp /bin/systemctl.py /bin/systemctl && \
-    systemctl enable php-fpm && \
-    systemctl enable nginx && \
-    sed -i "s/.*open_basedir =.*/open_basedir =/g" /etc/php/php.ini && \
-    sed -i "s/; extension = imagick/extension=imagick/g" /etc/php/conf.d/imagick.ini;
-COPY pool.conf /etc/php/php-fpm.d/pool.conf
-COPY php.ini /etc/php/conf.d/user.ini
-RUN echo 'app ALL=(ALL) NOPASSWD: /webcrate/versions.py' | EDITOR='tee -a' visudo && \
-    echo 'app ALL=(ALL) NOPASSWD: /webcrate/updateprojects.py' | EDITOR='tee -a' visudo && \
-    echo 'app ALL=(ALL) NOPASSWD: /webcrate/updateredirects.py' | EDITOR='tee -a' visudo && \
-    echo 'app ALL=(ALL) NOPASSWD: /webcrate/reload-redirect.py' | EDITOR='tee -a' visudo && \
-    echo 'app ALL=(ALL) NOPASSWD: /webcrate/reload.py' | EDITOR='tee -a' visudo
 COPY --chown=app:app app /app
 COPY --from=frontend --chown=app:app /app/public/build/ /app/public/build/
-RUN mkdir /webcrate && \
-    chown app:app /webcrate
 WORKDIR /app
 USER app
+# Keep dev dependencies: init-db.py loads Doctrine fixtures in the dev environment.
+# The checked-in lock still targets Symfony 5.1; retain the existing resolution behavior.
 RUN composer config --no-plugins allow-plugins.symfony/flex true && \
-    sed -i "s/.*\"@auto-scripts\".*/ /g" composer.json && \
+    sed -i 's/.*"@auto-scripts".*/ /g' composer.json && \
     rm -f composer.lock && \
-    composer install --no-scripts && \
+    composer install --no-scripts --no-interaction --prefer-dist && \
     composer clear-cache
-WORKDIR /app/assets/admin
+
 USER root
-COPY ["init-db.py", "log.py", "updateprojects.py", "updateredirects.py", "reload-redirect.py", "versions.py", "reload.py", "/webcrate"]
+COPY ["init-db.py", "log.py", "updateprojects.py", "updateredirects.py", "reload-redirect.py", "versions.py", "reload.py", "/webcrate/"]
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
 COPY entrypoint.sh /entrypoint.sh
-CMD ["/entrypoint.sh"]
-RUN chmod u+x /webcrate/init-db.py && \
-    chmod a+rxs /webcrate/log.py && \
-    chmod a+rxs /webcrate/versions.py && \
-    chmod a+rxs /webcrate/updateprojects.py && \
-    chmod a+rxs /webcrate/updateredirects.py && \
-    chmod a+rxs /webcrate/reload.py && \
-    chmod a+rxs /webcrate/reload-redirect.py && \
-    chmod u+x /entrypoint.sh
+# Normalize scripts copied from Windows checkouts before executing them on Linux.
+RUN mkdir -p /app/var /app/logs && \
+    chown -R app:app /app/var /app/logs && \
+    sed -i 's/\r$//' /entrypoint.sh /webcrate/*.py && \
+    chmod 0755 /entrypoint.sh /webcrate/*.py && \
+    php-fpm8.4 -t && nginx -t
+
 EXPOSE 80
+CMD ["/entrypoint.sh"]
