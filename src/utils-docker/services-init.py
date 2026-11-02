@@ -30,8 +30,7 @@ WEBCRATE_SERVICE_DOCXTOPDF = os.environ.get('WEBCRATE_SERVICE_DOCXTOPDF', 'false
 WEBCRATE_SERVICE_PDFFOOTER = os.environ.get('WEBCRATE_SERVICE_PDFFOOTER', 'false') == 'true'
 WEBCRATE_PWD = os.environ.get('WEBCRATE_PWD', '')
 
-helpers.init_openssl_root_conf()
-helpers.init_letsencrypt_conf()
+certificates.prepare_startup(log)
 
 async def startMysql (service):
   mysql_root_password = os.popen(f'cat /webcrate/secrets/mysql.cnf | grep "password="').read().strip().split("password=")[1][1:][:-1]
@@ -110,16 +109,10 @@ for servicename,service in services.items():
 
 
 # Install certificates only for services whose proxy configuration is generated.
-certificate_failures = []
 for servicename, service in services.items():
   if service_settings.enabled(servicename):
     service.name = servicename
-    try:
-      certificates.initialize(service)
-    except Exception as error:
-      log.write(f'{servicename} - certificate initialization failed: {error}')
-      print(f'{servicename} - certificate initialization failed: {error}', file=sys.stderr)
-      certificate_failures.append(servicename)
+    certificates.initialize_for_startup(service, log)
 
 dbHosts = 'webcrate-mysql'
 for servicename,service in services.items():
@@ -141,5 +134,3 @@ with open(f'/webcrate/meta/dbhosts.txt', 'w') as f:
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/meta')
 
 sys.stdout.flush()
-if certificate_failures:
-  sys.exit(1)
