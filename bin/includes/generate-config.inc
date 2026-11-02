@@ -32,6 +32,7 @@ else
   writeLog "Cannot detect Nginx version; using compatible HTTP/2 syntax"
 fi
 
+if [ "${WEBCRATE_START_SERVICES_ONLY:-false}" != true ]; then
 writeLog "Parse projects started"
 docker run --rm --env-file=$(pwd)/.env --entrypoint /parse-projects.py --name webcrate-docker-parse-projects \
   -e WEBCRATE_UID=$uid \
@@ -70,6 +71,8 @@ docker run --rm --env-file=$(pwd)/.env --entrypoint /parse-redirects.py --name w
   -v $(pwd)/var/nginx:/webcrate/nginx \
   ace5040/webcrate-utils-docker:stable
 writeLog "Parse redirects ended"
+
+fi
 
 writeLog "Parse services started"
 docker run --rm --env-file=$(pwd)/.env --entrypoint /parse-services.py --name webcrate-docker-parse-services \

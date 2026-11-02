@@ -9,7 +9,7 @@ function Help() {
   echo ''
   echo 'Usage: webcrate _command_ [OPTIONS]'
   echo ''
-  echo '  start   - Build config and start containers'
+  echo '  start   - Build config and start containers (--services-only skips projects and redirects)'
   echo '  stop    - Stop and remove all containers'
   echo '  restart - Same as Stop then Start'
   echo '  dock    - Connect to project container with fish. Usage webcrate dock [project_name]'
@@ -30,10 +30,22 @@ function Help() {
 }
 
 function Start() {
+  local WEBCRATE_START_SERVICES_ONLY=false
+  if [ "$#" -gt 1 ]; then
+    echo "Usage: webcrate start [--services-only]" >&2
+    return 1
+  fi
+  case "${1:-}" in
+    "") ;;
+    --services-only) WEBCRATE_START_SERVICES_ONLY=true ;;
+    *) echo "Unknown start option: $1" >&2; return 1 ;;
+  esac
   source ./bin/includes/generate-config.inc
   source ./bin/includes/services.inc || return $?
-  source ./bin/includes/projects.inc
-  source ./bin/includes/redirects.inc
+  if [ "$WEBCRATE_START_SERVICES_ONLY" != true ]; then
+    source ./bin/includes/projects.inc
+    source ./bin/includes/redirects.inc
+  fi
   writeLog "Started"
 }
 
@@ -278,7 +290,7 @@ function Dock() {
 }
 
 case $1 in
-  start) Start;;
+  start) Start "${@:2}"; exit $?;;
   stop) Stop;;
   restart) Restart;;
   dock) Dock $2;;
