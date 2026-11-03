@@ -193,7 +193,7 @@ class AdminController extends AbstractController
         $this->manager->remove($project);
         $this->manager->flush();
         $list = $this->repository->getListForTable();
-        $this->updateProjectsYaml();
+        $this->updateProjectsYaml(true);
         $response = new JsonResponse();
         $response->setData([
             'result' => 'ok',
@@ -402,13 +402,17 @@ class AdminController extends AbstractController
         return $response;
     }
 
-    public function updateProjectsYaml()
+    public function updateProjectsYaml(bool $syncFtp = false)
     {
         $ymlData = $this->getYmlData();
         try {
             $new_file_path = "/webcrate/updated-projects.yml";
             file_put_contents($new_file_path, $ymlData);
-            $process = Process::fromShellCommandline('sudo /webcrate/updateprojects.py');
+            $command = ['sudo', '/webcrate/updateprojects.py'];
+            if ($syncFtp) {
+                $command[] = '--sync-ftp';
+            }
+            $process = new Process($command);
             $process->run();
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);

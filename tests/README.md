@@ -28,3 +28,8 @@ and startup scripts. Existing project/redirect configuration is retained.
 Shared initialization, Nginx, databases, utilities, and certificate storage
 remain shared; service TLS changes may reload the Nginx serving existing sites.
 This flag does not recreate existing service containers or apply to `restart`.
+
+FTP/FTPS and admin account lifecycle checks are documented in
+[`src/ftp/README.md`](../src/ftp/README.md#validation). The Docker fixtures
+verify transfers, path confinement, account revocation, synchronization from
+unchanged admin output, and continued FTP access for inactive projects.

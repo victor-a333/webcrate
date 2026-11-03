@@ -280,30 +280,34 @@ if docker container inspect webcrate-ftp >/dev/null 2>/dev/null; then
   writeLog "Container webcrate-ftp exists"
 else
   writeLog "Starting ftp container"
-  PROJECTS_HOMES=""
-  for SITES_PATH in ${WEBCRATE_PROJECTS_FOLDERS[@]}
+  FTP_PROJECT_ROOTS=()
+  FTP_PROJECT_VOLUME=0
+  for SITES_PATH in "${WEBCRATE_PROJECTS_FOLDERS[@]}"
   do
     if [[ $SITES_PATH == /* ]]; then
       SITES_ABSOLUTE_PATH=$SITES_PATH;
     else
       SITES_ABSOLUTE_PATH=$(pwd)/$SITES_PATH;
     fi
-    for dir in $(find $SITES_ABSOLUTE_PATH -mindepth 1 -maxdepth 1 -type d); do
-      project_name=`basename $dir`
-      PROJECTS_HOMES="$PROJECTS_HOMES-v $SITES_ABSOLUTE_PATH/$project_name:/home/$project_name "
-    done
+    FTP_PROJECT_TARGET=/projects
+    if [ "$FTP_PROJECT_VOLUME" -gt 0 ]; then
+      FTP_PROJECT_TARGET="/projects$((FTP_PROJECT_VOLUME + 1))"
+    fi
+    FTP_PROJECT_ROOTS+=(-v "$SITES_ABSOLUTE_PATH:$FTP_PROJECT_TARGET")
+    FTP_PROJECT_VOLUME=$((FTP_PROJECT_VOLUME + 1))
   done
 
-  docker run -d --env-file=$(pwd)/.env --hostname webcrate-ftp --name webcrate-ftp \
+  docker run -d --hostname webcrate-ftp --name webcrate-ftp \
     --network="host" \
     --restart="unless-stopped" \
+    --security-opt no-new-privileges:true \
+    -e WEBCRATE_FTP_ROOT_COUNT="$FTP_PROJECT_VOLUME" \
     -e WEBCRATE_UID=$uid \
     -e WEBCRATE_GID=$gid \
-    $PROJECTS_HOMES \
+    "${FTP_PROJECT_ROOTS[@]}" \
     -v /etc/localtime:/etc/localtime:ro \
     -v $(pwd)/projects.yml:/webcrate/projects.yml:ro \
-    -v $(pwd)/var/meta:/webcrate/meta \
-    -v $(pwd)/var/log:/webcrate/log \
+    -v "$(pwd)/var/ftp-tls:/webcrate/tls" \
     ace5040/webcrate-ftp:stable > /dev/null
 fi
 

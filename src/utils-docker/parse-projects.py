@@ -2,6 +2,7 @@
 
 import os
 import sys
+import subprocess
 import yaml
 from munch import munchify
 
@@ -32,3 +33,6 @@ os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/nginx')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/php_pools')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/dnsmasq')
 sys.stdout.flush()
+
+# Refresh FTP after CLI configuration generation, including deleted projects.
+subprocess.run(["/ftp-sync.py"], check=True)

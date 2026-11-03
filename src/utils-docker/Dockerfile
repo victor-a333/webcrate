@@ -24,6 +24,7 @@ COPY [ \
     "redirect.conf", \
     "ssl.conf", \
     "helpers.py", \
+    "ftp-sync.py", \
     "parse-projects.py", \
     "project-config.py", \
     "project-start.py", \

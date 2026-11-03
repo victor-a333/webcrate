@@ -3,6 +3,7 @@
 import os
 import nginx_tls
 import sys
+import subprocess
 import yaml
 from munch import munchify
 import json
@@ -261,5 +262,9 @@ os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/meta')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/nginx')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/php_pools')
 os.system(f'chown -R {WEBCRATE_UID}:{WEBCRATE_GID} /webcrate/dnsmasq')
+# Admin Apply passes "reload"; startup's batch parser syncs once afterward.
+if len(sys.argv) > 2 and sys.argv[2] == 'reload':
+  subprocess.run(['/ftp-sync.py'], check=True)
+
 sys.stdout.flush()
 sys.exit(0)
